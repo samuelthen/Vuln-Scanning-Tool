@@ -1,0 +1,98 @@
+import re
+import logging
+from requests.models import Request, Response
+from .utils.base_passive_scan_rule import BasePassiveScanRule
+
+logger = logging.getLogger(__name__)
+
+class ApplicationErrorScanRule(BasePassiveScanRule):
+    """
+    Passive scan rule to check for application error messages in HTTP responses.
+    """
+
+    # Path to the XML file containing error patterns
+    APP_ERRORS_FILE = 'src/passive_scan/passive_scan_rules/utils/application_errors.xml'
+    DEFAULT_ERRORS = []
+    ERRORS_PAYLOAD_CATEGORY = "Application-Errors"
+
+    def __init__(self):
+        super().__init__()
+        self.matcher = None
+        self.payload_provider = lambda: self.DEFAULT_ERRORS
+        self.load_content_matcher()
+
+    def load_content_matcher(self):
+        """
+        Load the content matcher with patterns from an external file.
+        """
+        try:
+            with open(self.APP_ERRORS_FILE, 'r') as f:
+                self.matcher = self.ContentMatcher(f.read())
+        except (IOError, ValueError) as e:
+            logger.warn(f"Unable to read {self.APP_ERRORS_FILE} input file: {e}. Falling back to default.")
+            self.matcher = self.ContentMatcher(self.get_default_patterns())
+
+    def get_default_patterns(self):
+        """
+        Fallback method to get default patterns if the external file is not accessible.
+        """
+        return """
+        <patterns>
+            <!-- Add default error patterns here -->
+            <pattern>ERROR: parser: parse error at or near</pattern>
+        </patterns>
+        """
+
+    class ContentMatcher:
+        """
+        Inner class to handle content matching with patterns.
+        """
+        def __init__(self, patterns):
+            self.patterns = re.findall(r'<pattern>(.*?)</pattern>', patterns, re.DOTALL)
+
+        def find_in_content(self, content):
+            for pattern in self.patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    return pattern
+            return None
+
+    def check_risk(self, request: Request, response: Response) -> str:
+        """
+        Perform the passive scanning of application errors inside the response content.
+
+        Returns:
+        - str: A message indicating the risk level.
+        """
+        try:
+            # Skip non-HTML or non-plaintext responses
+            content_type = response.headers.get('Content-Type', '')
+            if 'text/html' not in content_type and 'text/plain' not in content_type:
+                return "No risk (non-HTML response)"
+
+            body = response.text
+
+            # Check for INTERNAL SERVER ERROR
+            if response.status_code == 500:
+                return "Low risk (Internal Server Error detected)"
+
+            # Skip 404 and wasm responses
+            if response.status_code == 404 or 'application/wasm' in content_type:
+                return "No risk (404 or wasm response)"
+
+            # Check for custom payloads
+            for payload in self.payload_provider():
+                if payload in body:
+                    return f"Medium risk (Custom application error detected: {payload})"
+
+            # Check for patterns in content
+            evidence = self.matcher.find_in_content(body)
+            if evidence:
+                return f"Medium risk (Application error pattern detected: {evidence})"
+
+            return "No risk (No application errors detected)"
+        except Exception as e:
+            logger.error(f"Error during scan: {e}")
+            return "Error occurred during scan, check logs for details"
+
+    def __str__(self) -> str:
+        return "Application Error"
