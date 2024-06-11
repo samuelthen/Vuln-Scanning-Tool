@@ -62,8 +62,10 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
                             evidence.append(str(script))
                 
                 if risk_flag:
-                    return Alert(risk_category="Low", description="Cross Domain Script Inclusion detected without integrity attribute)",
-                                  evidence={evidence})
+                    return Alert(risk_category="Low", 
+                                 description="Cross Domain Script Inclusion detected without integrity attribute)",
+                                 msg_ref="pscanrules.crossdomainscriptinclusion",
+                                 evidence={evidence})
                 else:
                     return NoAlert()
 

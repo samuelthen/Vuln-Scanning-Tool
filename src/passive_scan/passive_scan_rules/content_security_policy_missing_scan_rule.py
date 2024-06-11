@@ -12,7 +12,7 @@ class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
         Check for missing Content-Security-Policy headers or obsolete CSP headers.
 
         Returns:
-        - 
+        - Alert class
         """
         try:
             # Check if the response is HTML
@@ -20,17 +20,24 @@ class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
                 # Check if CSP header is present
                 if "Content-Security-Policy" not in response.headers:
                     if not CspUtils.has_meta_csp(response.text):
-                        return Alert(risk_category="Medium", description="Content-Security-Policy header missing",
-                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                        return Alert(risk_category="Medium", 
+                                     description="Content-Security-Policy header missing",
+                                     msg_ref="pscanrules.contentsecuritypolicymissing",
+                                     cwe_id=self.get_cwe_id(), 
+                                     wasc_id=self.get_wasc_id())
                 
                 # Check for obsolete CSP headers
                 if "X-Content-Security-Policy" in response.headers or \
                 "X-WebKit-CSP" in response.headers:
-                    return Alert(risk_category="Informational", description="Obsolete CSP header present")
+                    return Alert(risk_category="Informational", 
+                                 description="Obsolete CSP header present",
+                                 msg_ref="pscanrules.contentsecuritypolicymissing.obs")
 
                 # Check for CSP report-only header
                 if "Content-Security-Policy-Report-Only" in response.headers:
-                    return Alert(risk_category="Informational", description="CSP report-only header present")
+                    return Alert(risk_category="Informational", 
+                                 description="CSP report-only header present",
+                                 msg_ref="pscanrules.contentsecuritypolicymissing.ro")
             
             return NoAlert()
         except Exception as e:

@@ -22,14 +22,14 @@ class PassiveScanner:
         """
         self.scan_rules: List[BasePassiveScanRule] = []
 
-        self.scan_rules.append(AntiClickjackingScanRule())
-        self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
-        self.scan_rules.append(CrossDomainScriptInclusionScanRule())
-        self.scan_rules.append(StrictTransportSecurityScanRule())
-        self.scan_rules.append(ApplicationErrorScanRule())
-        self.scan_rules.append(CookieSecureFlagScanRule())
+        # self.scan_rules.append(AntiClickjackingScanRule())
+        # self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
+        # self.scan_rules.append(CrossDomainScriptInclusionScanRule())
+        # self.scan_rules.append(StrictTransportSecurityScanRule())
+        # self.scan_rules.append(ApplicationErrorScanRule())
+        # self.scan_rules.append(CookieSecureFlagScanRule())
         self.scan_rules.append(UserControlledHTMLAttributesScanRule())
-        self.scan_rules.append(UserControlledJavascriptEventScanRule())
+        # self.scan_rules.append(UserControlledJavascriptEventScanRule())
 
     def run_scan(self, request: Request, response: Response):
         """Run the vulnerability scan."""

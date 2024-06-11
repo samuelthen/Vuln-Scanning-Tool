@@ -26,14 +26,23 @@ class AntiClickjackingScanRule(BasePassiveScanRule):
                 if "X-Frame-Options" in response.headers:
                     xfo_values = response.headers.get("X-Frame-Options").lower()
                     if "deny" not in xfo_values and "sameorigin" not in xfo_values:
-                        return Alert(risk_category="Medium", description="X-Frame-Options not properly set", 
-                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                        return Alert(risk_category="Medium", 
+                                     description="X-Frame-Options not properly set", 
+                                     msg_ref="pscanrules.anticlickjacking.compliance.malformed.setting",
+                                     cwe_id=self.get_cwe_id(), 
+                                     wasc_id=self.get_wasc_id())
                     if len(xfo_values) > 1:
-                        return Alert(risk_category="Medium", description="Multiple X-Frame-Options headers",
-                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                        return Alert(risk_category="Medium", 
+                                     description="Multiple X-Frame-Options headers",
+                                     msg_ref="pscanrules.anticlickjacking.multiple.header",
+                                     cwe_id=self.get_cwe_id(), 
+                                     wasc_id=self.get_wasc_id())
                 else:
-                    return Alert(risk_category="Medium", description="X-Frame-Options header missing",
-                                 cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                    return Alert(risk_category="Medium", 
+                                 description="X-Frame-Options header missing",
+                                 msg_ref="pscanrules.anticlickjacking.missing",
+                                 cwe_id=self.get_cwe_id(), 
+                                 wasc_id=self.get_wasc_id())
             
             return NoAlert()
         except Exception as e:

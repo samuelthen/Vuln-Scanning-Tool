@@ -19,8 +19,11 @@ class CookieSecureFlagScanRule(BasePassiveScanRule):
                 cookies = response.headers.get('Set-Cookie')
                 if cookies:
                     if 'Secure' not in cookies:
-                        return Alert(risk_category="Low", description="missing Secure attribute in cookie",
-                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                        return Alert(risk_category="Low", 
+                                     description="missing Secure attribute in cookie",
+                                     msg_ref="pscanrules.cookiesecureflag",
+                                     cwe_id=self.get_cwe_id(), 
+                                     wasc_id=self.get_wasc_id())
                 return NoAlert()
             return NoAlert()
         except Exception as e:
