@@ -1,16 +1,17 @@
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
+from .utils.alert import Alert, NoAlert, ScanError
 
 class CookieSecureFlagScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for the Secure attribute in cookies.
     """
-    def check_risk(self, request: Request, response: Response) -> str:
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for the Secure attribute in cookies.
 
         Returns:
-        - str: A message indicating the risk level.
+        - Alert
         """
         try:
             # Check if the response is over a secure channel
@@ -18,13 +19,20 @@ class CookieSecureFlagScanRule(BasePassiveScanRule):
                 cookies = response.headers.get('Set-Cookie')
                 if cookies:
                     if 'Secure' not in cookies:
-                        return 'Low risk (missing Secure attribute in cookie)'
-                return 'No risk (cookies secure)'
-            return 'No risk (not an HTTPS response)'
+                        return Alert(risk_category="Low", description="missing Secure attribute in cookie",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
+                return NoAlert()
+            return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
-            return 'Error occurred during scan, check logs for details'
+            return ScanError(description=e)
 
     def __str__(self) -> str:
         return "Cookie Secure Flag"
+
+    def get_cwe_id(self):
+        return 614 # CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute
+
+    def get_wasc_id(self):
+        return 13 # WASC-13: Info leakage

@@ -37,14 +37,14 @@ class PassiveScanner:
 
         for scan_rule in self.scan_rules:
             try:
-                results[str(scan_rule)] = scan_rule.check_risk(request, response)
+                results[str(scan_rule)] = str(scan_rule.check_risk(request, response))
             except Exception as e:
                 results[str(scan_rule)] = f"Error running scan rule: {e}"
 
         return results
 
 if __name__ == '__main__':
-    url = "https://en.wikipedia.org/wiki/Salesforce.com"  # Replace with the URL you want to start crawling
+    url = "https://testportal.helium.sh"  # Replace with the URL you want to start crawling
     request = Request(url=url)
     try:
         response = requests.get(url)

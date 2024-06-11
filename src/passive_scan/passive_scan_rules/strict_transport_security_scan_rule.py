@@ -1,6 +1,7 @@
 import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
+from .utils.alert import Alert, NoAlert, ScanError
 
 class StrictTransportSecurityScanRule(BasePassiveScanRule):
     """
@@ -18,7 +19,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
         Check for issues with the Strict-Transport-Security header.
 
         Returns:
-        - str: A message indicating the risk level.
+        - Alert
         """
         try:
             # Only check secure (HTTPS) responses
@@ -28,33 +29,41 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
 
                 if not sts_headers:
                     if not self.is_redirect(response):
-                        return "Medium risk (Strict-Transport-Security header missing)"
+                        return Alert(risk_category="Low", description="Strict-Transport-Security header missing",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
                     else:
-                        return "Low risk (redirect to HTTPS with missing STS header)"
+                        return Alert(risk_category="Low", description="redirect to HTTPS with missing STS header",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
                 else:
                     sts_option_string = sts_headers.lower()
                     if not self.WELL_FORMED_PATT.match(sts_option_string):
-                        return "Low risk (malformed Strict-Transport-Security header content)"
+                        return Alert(risk_category="Low", description="malformed Strict-Transport-Security header content",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
                     if self.BAD_MAX_AGE_PATT.search(sts_option_string):
-                        return "Low risk (Strict-Transport-Security header with max-age=0)"
+                        return Alert(risk_category="Low", description="Strict-Transport-Security header with max-age=0",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())
                     if not self.MAX_AGE_PATT.search(sts_option_string):
-                        return "Low risk (Strict-Transport-Security header missing max-age)"
+                        return Alert(risk_category="Low", description="Strict-Transport-Security header missing max-age",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())                    
                     if self.MALFORMED_MAX_AGE.search(sts_option_string):
-                        return "Low risk (malformed max-age in Strict-Transport-Security header)"
+                        return Alert(risk_category="Low", description="malformed max-age in Strict-Transport-Security header",
+                                     cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())   
 
                 if meta_hsts:
-                    return "Low risk (Strict-Transport-Security set via META tag)"
+                    return Alert(risk_category="Low", description="Strict-Transport-Security set via META tag",
+                                 cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())   
 
             else:
                 # Check for STS headers in non-HTTPS responses at low threshold
                 if response.headers.get(self.STS_HEADER, None):
-                    return "Info (Strict-Transport-Security header present on non-HTTPS response)"
+                    return Alert(risk_category="Informational", description="Strict-Transport-Security header present on non-HTTPS response",
+                                 cwe_id=self.get_cwe_id(), wasc_id=self.get_wasc_id())   
 
-            return "No risk (Strict-Transport-Security header is set correctly or not applicable)"
+            return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
-            return "Error occurred during scan, check logs for details"
+            return ScanError(description=e)
 
     def get_meta_hsts_evidence(self, response: Response) -> str:
         """
@@ -82,3 +91,9 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
 
     def __str__(self) -> str:
         return "Strict-Transport-Security (HSTS) Header"
+
+    def get_cwe_id(self):
+        return 319 # CWE-319: Cleartext Transmission of Sensitive Information
+
+    def get_wasc_id(self):
+        return 15 # WASC-15: Application Misconfiguration

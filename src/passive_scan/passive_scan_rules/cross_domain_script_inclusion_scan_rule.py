@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
+from .utils.alert import Alert, NoAlert, ScanError
 
 class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
     """
@@ -31,7 +32,7 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
             print(f"Error parsing script URL: {e}")
             return False
 
-    def check_risk(self, request: Request, response: Response):
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for cross-domain script inclusions without the integrity attribute.
 
@@ -61,15 +62,16 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
                             evidence.append(str(script))
                 
                 if risk_flag:
-                    return f"Low risk (Cross Domain Script Inclusion detected without integrity attribute). Evidence: {evidence}"
+                    return Alert(risk_category="Low", description="Cross Domain Script Inclusion detected without integrity attribute)",
+                                  evidence={evidence})
                 else:
-                    return 'No risk (no cross-domain scripts without integrity attribute found)'
+                    return NoAlert()
 
-            return 'No risk (not an HTML response)'
+            return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
-            return 'Error occurred during scan, check logs for details'
+            return ScanError(description=e)
         
     def __str__(self) -> str:
         return "Cross Domain Script Inclusion"
