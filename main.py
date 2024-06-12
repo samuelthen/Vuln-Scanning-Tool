@@ -22,7 +22,7 @@ def access_nested_dict(data, key_string):
 
 if __name__ == '__main__':
     start_url = 'https://testportal.helium.sh/'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=1)
+    spider = WebSpider(base_url=start_url, max_pages=5)
     urls, out_scope_urls = spider.crawl()
     crawl_results = {
         "in_scope_urls": urls,
@@ -43,7 +43,6 @@ if __name__ == '__main__':
             report_levels = ["high", "medium", "low"]
             results = scanner.run_scan(request, response).values()
             for result in results:
-                
                 if result.risk_category == "informational":
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
                     if msg not in ps_results[result.risk_category]:
@@ -72,6 +71,8 @@ if __name__ == '__main__':
     data = {"urls": crawl_results, "passive_vulnerabilities": ps_results}
     with open("scan_results.json", 'w') as file:
         json.dump(data, file, indent=2)
+    
+    
     # with open('scan_results.csv', mode='w', newline='', encoding="utf-8") as file:
     #     all_tests = set().union(*(d.keys() for d in ps_results))
 

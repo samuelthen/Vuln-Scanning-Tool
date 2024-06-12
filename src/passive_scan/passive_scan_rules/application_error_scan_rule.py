@@ -68,7 +68,7 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             # Skip non-HTML or non-plaintext responses
             content_type = response.headers.get('Content-Type', '')
             if 'text/html' not in content_type and 'text/plain' not in content_type:
-                return "No risk (non-HTML response)"
+                return NoAlert()
 
             body = response.text
 

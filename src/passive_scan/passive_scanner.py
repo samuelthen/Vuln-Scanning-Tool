@@ -53,6 +53,7 @@ class PassiveScanner:
             try:
                 results[str(scan_rule)] = scan_rule.check_risk(request, response)
             except Exception as e:
+                
                 logger.error(e)
 
         return results

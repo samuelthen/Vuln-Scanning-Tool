@@ -1,6 +1,10 @@
 {
   "urls": {
     "in_scope_urls": [
+      "https://testportal.helium.sh/mod.php?kategori=disclaimer",
+      "https://testportal.helium.sh/mod.php?kategori=sains",
+      "https://testportal.helium.sh/mod.php?kategori=unik",
+      "https://testportal.helium.sh/mod.php?kategori=bukutamu",
       "https://testportal.helium.sh/"
     ],
     "out_scope_urls": [
@@ -12,6 +16,7 @@
     "low": {
       "Cookie Without Secure Flag": {
         "https://testportal.helium.sh/": {
+          "evidence": "PHPSESSID=a58472d2af8ab417070806cef6b050f1; path=/",
           "cwe_id": 614,
           "wasc_id": 13
         }
@@ -19,12 +24,44 @@
     },
     "medium": {
       "Missing Anti-clickjacking Header": {
+        "https://testportal.helium.sh/mod.php?kategori=disclaimer": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=sains": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=unik": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=bukutamu": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
         "https://testportal.helium.sh/": {
           "cwe_id": 1021,
           "wasc_id": 15
         }
       },
       "Content Security Policy (CSP) Header Not Set": {
+        "https://testportal.helium.sh/mod.php?kategori=disclaimer": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=sains": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=unik": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php?kategori=bukutamu": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
         "https://testportal.helium.sh/": {
           "cwe_id": 693,
           "wasc_id": 15

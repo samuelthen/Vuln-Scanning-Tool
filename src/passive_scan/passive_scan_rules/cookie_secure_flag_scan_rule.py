@@ -25,11 +25,12 @@ class CookieSecureFlagScanRule(BasePassiveScanRule):
                         return Alert(risk_category="Low", 
                                      description="missing Secure attribute in cookie",
                                      msg_ref="pscanrules.cookiesecureflag",
+                                     evidence=cookies,
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
                 return NoAlert()
             return NoAlert()
-        except Exception as e:
+        except Exception as e: 
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
             return ScanError(description=e)
