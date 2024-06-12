@@ -2,6 +2,7 @@ import re
 import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
+from .utils.alert import Alert, NoAlert, ScanError
 
 logger = logging.getLogger(__name__)
 
@@ -73,26 +74,46 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
 
             # Check for INTERNAL SERVER ERROR
             if response.status_code == 500:
-                return "Low risk (Internal Server Error detected)"
+                return Alert(risk_category="Low", 
+                             description="Internal Server Error detected",
+                             msg_ref="pscanrules.applicationerrors",
+                             cwe_id=self.get_cwe_id(),
+                             wasc_id=self.get_wasc_id())
 
             # Skip 404 and wasm responses
             if response.status_code == 404 or 'application/wasm' in content_type:
-                return "No risk (404 or wasm response)"
+                return NoAlert()
 
             # Check for custom payloads
             for payload in self.payload_provider():
                 if payload in body:
-                    return f"Medium risk (Custom application error detected: {payload})"
+                    return Alert(risk_category="Medium", 
+                                 description="Custom application error detected",
+                                 msg_ref="pscanrules.applicationerrors",
+                                 evidence=payload,
+                                 cwe_id=self.get_cwe_id(), 
+                                 wasc_id=self.get_wasc_id())
 
             # Check for patterns in content
             evidence = self.matcher.find_in_content(body)
             if evidence:
-                return f"Medium risk (Application error pattern detected: {evidence})"
+                return Alert(risk_category="Medium",
+                             description="Application error pattern detected",
+                             msg_ref="pscanrules.applicationerrors",
+                             evidence=evidence,
+                             cwe_id=self.get_cwe_id(),
+                             wasc_id=self.get_wasc_id())
 
-            return "No risk (No application errors detected)"
+            return NoAlert()
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return "Error occurred during scan, check logs for details"
+            return ScanError(description=e)
 
     def __str__(self) -> str:
         return "Application Error"
+    
+    def get_cwe_id(self):
+        return 200
+    
+    def get_wasc_id(self):
+        return 13

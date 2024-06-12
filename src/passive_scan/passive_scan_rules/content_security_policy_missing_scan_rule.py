@@ -1,7 +1,10 @@
+import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
 from .utils.csp_utils import CspUtils
+
+logger = logging.getLogger(__name__)
 
 class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
     """
@@ -42,7 +45,7 @@ class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
             return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
-            print(f"Error during scan: {e}")
+            logging.error(f"Error during scan: {e}")
             return ScanError(description=e)
         
     def __str__(self) -> str:

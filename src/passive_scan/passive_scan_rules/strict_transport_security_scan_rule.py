@@ -47,7 +47,8 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                                      msg_ref="pscanrules.stricttransportsecurity",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
-                elif len(response.headers.getlist(self.STS_HEADER)) > 1:
+                
+                elif len(response.headers.get(self.STS_HEADER, '').split(',')) > 1:
                     return Alert(risk_category="Low", 
                                  description="Multiple Strict-Transport-Security headers found",
                                  msg_ref="pscanrules.stricttransportsecurity.compliance.multiple.header",

@@ -1,7 +1,11 @@
+import logging
 from requests.models import Request, Response
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 from .utils.base_passive_scan_rule import BasePassiveScanRule
+from .utils.alert import Alert, NoAlert, ScanError
+
+logger = logging.getLogger(__name__)
 
 class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
     """
@@ -39,15 +43,23 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
                         if attr.lower() in self.JAVASCRIPT_EVENTS:
                             for param in params:
                                 if param in value:
-                                    return self.build_alert(request.url, attr, value, param)
-                
-                return "No risk detected"
+                                    evidence = f"Element: {element.name}\n" \
+                                               f"Attribute: {attr}\n" \
+                                               f"Attribute Value: {value}\n" \
+                                               f"Parameter: {param}"
+                                    return Alert(risk_category="Informational",
+                                                 description="User-controlled JavaScript event detected.",
+                                                 msg_ref="pscanrules.usercontrolledhtmlattributes",
+                                                 evidence=evidence,
+                                                 cwe_id=self.get_cwe_id(),
+                                                 wasc_id=self.get_wasc_id())                        
+                return NoAlert()
             
             return "No risk (not an HTML response)"
         except Exception as e:
             # Handle any exceptions that occur during the scan
-            print(f"Error during scan: {e}")
-            return 'Error occurred during scan, check logs for details'
+            logging.error(f"Error during scan: {e}")
+            return ScanError(description=e)
     
     def get_parameters(self, url: str) -> set:
         """
@@ -63,16 +75,11 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
             params.update(param_list)
         return params
     
-    def build_alert(self, url: str, attribute: str, attribute_value: str, param: str) -> str:
-        """
-        Build an alert message.
-
-        Returns:
-        - str: The alert message with the risk level and evidence.
-        """
-        evidence = f"Attribute: {attribute}\nAttribute Value: {attribute_value}\nParameter: {param}"
-        return f"High risk (potential XSS vulnerability): User-controlled JavaScript event detected. {evidence}"
-    
     def __str__(self) -> str:
         return "User-Controlled JavaScript Event"
 
+    def get_cwe_id(self):
+        return 20 # CWE-20: Improper Input Validation
+    
+    def get_wasc_id(self):
+        return 20 # WASC-20: Improper Input Handling

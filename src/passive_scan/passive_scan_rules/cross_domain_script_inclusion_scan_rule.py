@@ -1,8 +1,11 @@
+import logging
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+
+logger = logging.getLogger(__name__)
 
 class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
     """
@@ -29,7 +32,7 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
             return script_host.lower() != request_host.lower()
         except Exception as e:
             # Handle any exceptions that occur during URL parsing
-            print(f"Error parsing script URL: {e}")
+            logging.error(f"Error parsing script URL: {e}")
             return False
 
     def check_risk(self, request: Request, response: Response) -> Alert:
@@ -72,7 +75,7 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
             return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
-            print(f"Error during scan: {e}")
+            logging.error(f"Error during scan: {e}")
             return ScanError(description=e)
         
     def __str__(self) -> str:

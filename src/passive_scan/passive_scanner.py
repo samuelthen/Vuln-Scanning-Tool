@@ -1,3 +1,4 @@
+import logging
 from typing import List
 import requests
 from requests.models import Request, Response
@@ -11,6 +12,9 @@ from passive_scan_rules.cookie_secure_flag_scan_rule import CookieSecureFlagScan
 from passive_scan_rules.user_controlled_html_attributes_scan_rule import UserControlledHTMLAttributesScanRule
 from passive_scan_rules.user_controlled_javascript_event_scan_rule import UserControlledJavascriptEventScanRule
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 class PassiveScanner:
     """Passive scanner class for vulnerability scanning."""
     def __init__(self):
@@ -22,14 +26,14 @@ class PassiveScanner:
         """
         self.scan_rules: List[BasePassiveScanRule] = []
 
-        # self.scan_rules.append(AntiClickjackingScanRule())
-        # self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
-        # self.scan_rules.append(CrossDomainScriptInclusionScanRule())
-        # self.scan_rules.append(StrictTransportSecurityScanRule())
-        # self.scan_rules.append(ApplicationErrorScanRule())
-        # self.scan_rules.append(CookieSecureFlagScanRule())
+        self.scan_rules.append(AntiClickjackingScanRule())
+        self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
+        self.scan_rules.append(CrossDomainScriptInclusionScanRule())
+        self.scan_rules.append(StrictTransportSecurityScanRule())
+        self.scan_rules.append(ApplicationErrorScanRule())
+        self.scan_rules.append(CookieSecureFlagScanRule())
         self.scan_rules.append(UserControlledHTMLAttributesScanRule())
-        # self.scan_rules.append(UserControlledJavascriptEventScanRule())
+        self.scan_rules.append(UserControlledJavascriptEventScanRule())
 
     def run_scan(self, request: Request, response: Response):
         """Run the vulnerability scan."""
@@ -44,12 +48,13 @@ class PassiveScanner:
         return results
 
 if __name__ == '__main__':
-    url = "https://testportal.helium.sh"  # Replace with the URL you want to start crawling
+
+    url = "https://en.wikipedia.org/wiki/Contact_scraping"  # Replace with the URL you want to start crawling
     request = Request(url=url)
     try:
         response = requests.get(url)
     except requests.exceptions.RequestException as e:
-        print(f"Error making request: {e}")
+        logging.error(f"Error making request: {e}")
         response = None
 
     if response:
