@@ -9,6 +9,7 @@ class WebSpider:
         self.max_pages = max_pages
         self.visited_urls = set()
         self.to_visit = [base_url]
+        self.out_of_scope = set()
 
     def fetch_page(self, url):
         try:
@@ -58,11 +59,15 @@ class WebSpider:
         return links
 
     def is_valid_url(self, url):
-        # Check if URL is valid and belongs to the same domain as the base URL
-        return True
-        # parsed_url = urlparse(url)
-        # return bool(parsed_url.scheme) and bool(parsed_url.netloc) and urlparse(self.base_url).netloc in parsed_url.netloc
+        # Check if the URL is valid
+        parsed_url = urlparse(url)
+        return bool(parsed_url.scheme) and bool(parsed_url.netloc)
 
+    def is_same_domain(self, url):
+        # Check if the URL belongs to the same domain as the base URL
+        parsed_url = urlparse(url)
+        return urlparse(self.base_url).netloc in parsed_url.netloc
+    
     def crawl(self):
         while self.to_visit and len(self.visited_urls) < self.max_pages:
             current_url = self.to_visit.pop(0)
@@ -78,13 +83,16 @@ class WebSpider:
             links = self.get_links(page_content, current_url)
             for link in links:
                 if link not in self.visited_urls and self.is_valid_url(link):
-                    self.to_visit.append(link)
+                    if self.is_same_domain(link):
+                        self.to_visit.append(link)
+                    else:
+                        self.out_of_scope.add(link)
 
         print(f"Crawled {len(self.visited_urls)} pages.")
         
-        return list(self.visited_urls)
+        return (list(self.visited_urls), list(self.out_of_scope))
 
 if __name__ == '__main__':
-    start_url = 'https://en.wikipedia.org/wiki/Web_scraping'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=20)
-    spider.crawl()
+    start_url = 'https://testportal.helium.sh'  # Replace with the URL you want to start crawling
+    spider = WebSpider(base_url=start_url, max_pages=10)
+    print(spider.crawl())

@@ -5,7 +5,7 @@ class Alert:
         if risk_category.lower() not in self.VALID_RISK_CATEGORIES:
             raise ValueError(f"Invalid risk category '{risk_category}'. Valid options are: {self.VALID_RISK_CATEGORIES}")
         
-        self.risk_category = risk_category
+        self.risk_category = risk_category.lower()
         self.msg_ref =  msg_ref
         self.description = description
         self.evidence = evidence

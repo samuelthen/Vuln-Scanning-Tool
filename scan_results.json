@@ -1,0 +1,36 @@
+{
+  "urls": {
+    "in_scope_urls": [
+      "https://testportal.helium.sh/"
+    ],
+    "out_scope_urls": [
+      "http://studio7designs.com/contact-quote/"
+    ]
+  },
+  "passive_vulnerabilities": {
+    "informational": {},
+    "low": {
+      "Cookie Without Secure Flag": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 614,
+          "wasc_id": 13
+        }
+      }
+    },
+    "medium": {
+      "Missing Anti-clickjacking Header": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        }
+      },
+      "Content Security Policy (CSP) Header Not Set": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        }
+      }
+    },
+    "high": {}
+  }
+}

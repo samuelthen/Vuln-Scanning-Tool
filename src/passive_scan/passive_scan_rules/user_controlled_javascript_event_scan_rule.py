@@ -49,7 +49,7 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
                                                f"Parameter: {param}"
                                     return Alert(risk_category="Informational",
                                                  description="User-controlled JavaScript event detected.",
-                                                 msg_ref="pscanrules.usercontrolledhtmlattributes",
+                                                 msg_ref="pscanrules.usercontrolledjavascriptevent",
                                                  evidence=evidence,
                                                  cwe_id=self.get_cwe_id(),
                                                  wasc_id=self.get_wasc_id())                        
