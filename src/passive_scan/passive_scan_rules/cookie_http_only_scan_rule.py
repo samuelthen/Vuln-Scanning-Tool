@@ -23,6 +23,13 @@ class CookieHttpOnlyScanRule(BasePassiveScanRule):
         try:
             cookies1 = response.headers.get('Set-Cookie', [])
             cookies2 = response.headers.get('Set-Cookie2', [])
+            
+            # Ensure cookies1 and cookies2 are lists
+            if not isinstance(cookies1, list):
+                cookies1 = [cookies1]
+            if not isinstance(cookies2, list):
+                cookies2 = [cookies2]
+                
             cookies = cookies1 + cookies2
 
             ignore_list = self.get_cookie_ignore_list()
@@ -87,6 +94,3 @@ class CookieHttpOnlyScanRule(BasePassiveScanRule):
 
     def get_wasc_id(self):
         return 13  # WASC-13: Info leakage
-
-    
-

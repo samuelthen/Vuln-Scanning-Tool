@@ -13,6 +13,10 @@ from src.passive_scan.passive_scan_rules.application_error_scan_rule import Appl
 from src.passive_scan.passive_scan_rules.cookie_secure_flag_scan_rule import CookieSecureFlagScanRule
 from src.passive_scan.passive_scan_rules.user_controlled_html_attributes_scan_rule import UserControlledHTMLAttributesScanRule
 from src.passive_scan.passive_scan_rules.user_controlled_javascript_event_scan_rule import UserControlledJavascriptEventScanRule
+from src.passive_scan.passive_scan_rules.insecure_form_load_scan_rule import InsecureFormLoadScanRule
+from src.passive_scan.passive_scan_rules.insecure_form_post_scan_rule import InsecureFormPostScanRule
+from src.passive_scan.passive_scan_rules.cookie_http_only_scan_rule import CookieHttpOnlyScanRule
+from src.passive_scan.passive_scan_rules.csrf_countermeasures_scan_rule import CsrfCountermeasuresScanRule
 # from passive_scan_rules.utils.base_passive_scan_rule import BasePassiveScanRule
 # from passive_scan_rules.anticlickjacking_scan_rule import AntiClickjackingScanRule
 # from passive_scan_rules.content_security_policy_missing_scan_rule import ContentSecurityPolicyMissingScanRule
@@ -44,14 +48,22 @@ class PassiveScanner:
         self.scan_rules.append(CookieSecureFlagScanRule())
         self.scan_rules.append(UserControlledHTMLAttributesScanRule())
         self.scan_rules.append(UserControlledJavascriptEventScanRule())
+        self.scan_rules.append(InsecureFormLoadScanRule())
+        self.scan_rules.append(InsecureFormPostScanRule())
+        self.scan_rules.append(CookieHttpOnlyScanRule())
+        self.scan_rules.append(CsrfCountermeasuresScanRule())
+
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:
         """Run the vulnerability scan."""
         results = {}
+        logger.info(f"Scanning: {request.url}")
 
         for scan_rule in self.scan_rules:
             try:
-                results[str(scan_rule)] = scan_rule.check_risk(request, response)
+                result = scan_rule.check_risk(request, response)
+                results[str(scan_rule)] = result
+                # print(str(result))
             except Exception as e:
                 
                 logger.error(e)
