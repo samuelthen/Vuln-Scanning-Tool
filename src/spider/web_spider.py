@@ -1,7 +1,10 @@
 import requests
+import logging
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import re
+
+logger = logging.getLogger(__name__)
 
 class WebSpider:
     def __init__(self, base_url, max_pages=50):
@@ -17,7 +20,7 @@ class WebSpider:
             response.raise_for_status()
             return response.text
         except requests.RequestException as e:
-            print(f"Failed to fetch {url}: {e}")
+            logging.error(f"Failed to fetch {url}: {e}")
             return None
 
     def get_links(self, page_content, base_url):
@@ -74,7 +77,7 @@ class WebSpider:
             if current_url in self.visited_urls:
                 continue
             
-            print(f"Crawling: {current_url}")
+            logging.info(f"Crawling: {current_url}")
             page_content = self.fetch_page(current_url)
             if not page_content:
                 continue
@@ -88,7 +91,7 @@ class WebSpider:
                     else:
                         self.out_of_scope.add(link)
 
-        print(f"Crawled {len(self.visited_urls)} pages.")
+        logging.info(f"Crawled {len(self.visited_urls)} pages.")
         
         return (list(self.visited_urls), list(self.out_of_scope))
 

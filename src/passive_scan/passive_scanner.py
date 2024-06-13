@@ -4,6 +4,7 @@ from typing import List
 import requests
 from requests.models import Request, Response
 from src.passive_scan.passive_scan_rules.utils.base_passive_scan_rule import BasePassiveScanRule
+from src.passive_scan.passive_scan_rules.utils.base_passive_scan_rule import Alert
 from src.passive_scan.passive_scan_rules.anticlickjacking_scan_rule import AntiClickjackingScanRule
 from src.passive_scan.passive_scan_rules.content_security_policy_missing_scan_rule import ContentSecurityPolicyMissingScanRule
 from src.passive_scan.passive_scan_rules.cross_domain_script_inclusion_scan_rule import CrossDomainScriptInclusionScanRule
@@ -23,7 +24,6 @@ from src.passive_scan.passive_scan_rules.user_controlled_javascript_event_scan_r
 # from passive_scan_rules.user_controlled_javascript_event_scan_rule import UserControlledJavascriptEventScanRule
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class PassiveScanner:
     """Passive scanner class for vulnerability scanning."""
@@ -45,7 +45,7 @@ class PassiveScanner:
         self.scan_rules.append(UserControlledHTMLAttributesScanRule())
         self.scan_rules.append(UserControlledJavascriptEventScanRule())
 
-    def run_scan(self, request: Request, response: Response):
+    def run_scan(self, request: Request, response: Response) -> List[Alert]:
         """Run the vulnerability scan."""
         results = {}
 

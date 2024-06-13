@@ -55,7 +55,7 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
                                                  wasc_id=self.get_wasc_id())                        
                 return NoAlert()
             
-            return "No risk (not an HTML response)"
+            return NoAlert()
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")

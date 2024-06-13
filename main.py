@@ -42,6 +42,7 @@ if __name__ == '__main__':
 
             report_levels = ["high", "medium", "low"]
             results = scanner.run_scan(request, response).values()
+            
             for result in results:
                 if result.risk_category == "informational":
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
