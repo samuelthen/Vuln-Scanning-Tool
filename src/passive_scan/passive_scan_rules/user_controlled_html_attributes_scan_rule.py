@@ -48,7 +48,7 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=e)
+            return ScanError(description=str(e))
     
     def get_parameters(self, url: str) -> set:
         """

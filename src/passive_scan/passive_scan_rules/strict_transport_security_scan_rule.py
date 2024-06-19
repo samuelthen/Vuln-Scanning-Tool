@@ -101,7 +101,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
-            return ScanError(description=e)
+            return ScanError(description=str(e))
 
     def get_meta_hsts_evidence(self, response: Response) -> str:
         """

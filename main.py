@@ -21,8 +21,8 @@ def access_nested_dict(data, key_string):
     return value
 
 if __name__ == '__main__':
-    start_url = 'https://testportal.helium.sh/'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=1)
+    start_url = 'https://testportal.helium.sh'  # Replace with the URL you want to start crawling
+    spider = WebSpider(base_url=start_url, max_pages=5)
     urls, out_scope_urls = spider.crawl()
     crawl_results = {
         "in_scope_urls": urls,
@@ -39,6 +39,7 @@ if __name__ == '__main__':
         try:
             request = Request(url=url)
             response = requests.get(url)
+            # print(response.text)
 
             report_levels = ["high", "medium", "low"]
             results = scanner.run_scan(request, response).values()

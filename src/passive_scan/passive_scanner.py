@@ -17,6 +17,8 @@ from src.passive_scan.passive_scan_rules.insecure_form_load_scan_rule import Ins
 from src.passive_scan.passive_scan_rules.insecure_form_post_scan_rule import InsecureFormPostScanRule
 from src.passive_scan.passive_scan_rules.cookie_http_only_scan_rule import CookieHttpOnlyScanRule
 from src.passive_scan.passive_scan_rules.csrf_countermeasures_scan_rule import CsrfCountermeasuresScanRule
+from src.passive_scan.passive_scan_rules.information_disclosure_in_url_scan_rule import InformationDisclosureInUrlScanRule
+from src.passive_scan.passive_scan_rules.information_disclosure_referrer_scan_rule import InformationDisclosureReferrerScanRule
 # from passive_scan_rules.utils.base_passive_scan_rule import BasePassiveScanRule
 # from passive_scan_rules.anticlickjacking_scan_rule import AntiClickjackingScanRule
 # from passive_scan_rules.content_security_policy_missing_scan_rule import ContentSecurityPolicyMissingScanRule
@@ -52,6 +54,8 @@ class PassiveScanner:
         self.scan_rules.append(InsecureFormPostScanRule())
         self.scan_rules.append(CookieHttpOnlyScanRule())
         self.scan_rules.append(CsrfCountermeasuresScanRule())
+        self.scan_rules.append(InformationDisclosureInUrlScanRule())
+        self.scan_rules.append(InformationDisclosureReferrerScanRule())
 
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:

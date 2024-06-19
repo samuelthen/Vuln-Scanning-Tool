@@ -107,7 +107,7 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             return NoAlert()
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=e)
+            return ScanError(description=str(e))
 
     def __str__(self) -> str:
         return "Application Error"

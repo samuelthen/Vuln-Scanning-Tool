@@ -27,7 +27,6 @@ class WebSpider:
         soup = BeautifulSoup(page_content, 'html.parser')
         links = set()
 
-        # A, Link, Area, Base - ‘href’ attribute
         for tag in soup.find_all(['a', 'link', 'area', 'base'], href=True):
             href = tag.get('href')
             full_url = urljoin(base_url, href)
@@ -35,7 +34,6 @@ class WebSpider:
             normalized_url = parsed_url._replace(fragment='').geturl()
             links.add(normalized_url)
 
-        # Applet, Audio, Embed, Frame, IFrame, Input, Script, Img, Video - ‘src’ attribute
         for tag in soup.find_all(['applet', 'audio', 'embed', 'frame', 'iframe', 'input', 'script', 'img', 'video'], src=True):
             src = tag.get('src')
             full_url = urljoin(base_url, src)
@@ -43,7 +41,6 @@ class WebSpider:
             normalized_url = parsed_url._replace(fragment='').geturl()
             links.add(normalized_url)
 
-        # Blockquote - ‘cite’ attribute
         for tag in soup.find_all('blockquote', cite=True):
             cite = tag.get('cite')
             full_url = urljoin(base_url, cite)
@@ -51,7 +48,6 @@ class WebSpider:
             normalized_url = parsed_url._replace(fragment='').geturl()
             links.add(normalized_url)
 
-        # Meta - ‘http-equiv’ for ’location’, ‘refresh’ and ‘Content-Security-Policy’, ’name’ for ‘msapplication-config’
         for tag in soup.find_all('meta', {'http-equiv': ['location', 'refresh', 'Content-Security-Policy'], 'name': 'msapplication-config'}):
             content = tag.get('content')
             if content:
@@ -59,24 +55,23 @@ class WebSpider:
                 parsed_url = urlparse(full_url)
                 normalized_url = parsed_url._replace(fragment='').geturl()
                 links.add(normalized_url)
+
         return links
 
     def is_valid_url(self, url):
-        # Check if the URL is valid
         parsed_url = urlparse(url)
         return bool(parsed_url.scheme) and bool(parsed_url.netloc)
 
     def is_same_domain(self, url):
-        # Check if the URL belongs to the same domain as the base URL
         parsed_url = urlparse(url)
         return urlparse(self.base_url).netloc in parsed_url.netloc
-    
+
     def crawl(self):
         while self.to_visit and len(self.visited_urls) < self.max_pages:
             current_url = self.to_visit.pop(0)
             if current_url in self.visited_urls:
                 continue
-            
+
             logging.info(f"Crawling: {current_url}")
             page_content = self.fetch_page(current_url)
             if not page_content:
@@ -92,10 +87,4 @@ class WebSpider:
                         self.out_of_scope.add(link)
 
         logging.info(f"Crawled {len(self.visited_urls)} pages.")
-        
         return (list(self.visited_urls), list(self.out_of_scope))
-
-if __name__ == '__main__':
-    start_url = 'https://testportal.helium.sh'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=10)
-    print(spider.crawl())

@@ -33,7 +33,7 @@ class CookieSecureFlagScanRule(BasePassiveScanRule):
         except Exception as e: 
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=e)
+            return ScanError(description=str(e))
 
     def __str__(self) -> str:
         return "Cookie Secure Flag"
