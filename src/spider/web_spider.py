@@ -20,7 +20,7 @@ class WebSpider:
             response.raise_for_status()
             return response.text
         except requests.RequestException as e:
-            logging.error(f"Failed to fetch {url}: {e}")
+            logger.error(f"Failed to fetch {url}: {e}")
             return None
 
     def get_links(self, page_content, base_url):
@@ -72,7 +72,7 @@ class WebSpider:
             if current_url in self.visited_urls:
                 continue
 
-            logging.info(f"Crawling: {current_url}")
+            logger.info(f"Crawling: {current_url}")
             page_content = self.fetch_page(current_url)
             if not page_content:
                 continue
@@ -86,5 +86,5 @@ class WebSpider:
                     else:
                         self.out_of_scope.add(link)
 
-        logging.info(f"Crawled {len(self.visited_urls)} pages.")
+        logger.info(f"Crawled {len(self.visited_urls)} pages.")
         return (list(self.visited_urls), list(self.out_of_scope))
