@@ -32,7 +32,5 @@ properties_file = 'Messages.properties'
 config_dict = convert_properties_to_dict(properties_file)
 
 # Write the dictionary to a YAML file
-yaml_file = 'config.yaml'
+yaml_file = 'messages.yaml'
 write_dict_to_yaml(config_dict, yaml_file)
-
-print("Conversion complete. The YAML file has been created.")

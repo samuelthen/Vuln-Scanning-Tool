@@ -11,16 +11,17 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for cross-domain script inclusions without the integrity attribute.
     """
+    
     def is_script_from_other_domain(self, request_host, script_url):
         """
         Check if a script URL is from a different domain than the request domain.
 
         Args:
-        - request_host (str): The domain of the request URL.
-        - script_url (str): The URL of the script.
+            request_host (str): The domain of the request URL.
+            script_url (str): The URL of the script.
 
         Returns:
-        - bool: True if the script is from a different domain, False otherwise.
+            bool: True if the script is from a different domain, False otherwise.
         """
         try:
             parsed_script_url = urlparse(script_url)
@@ -39,8 +40,12 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
         """
         Check for cross-domain script inclusions without the integrity attribute.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - str: A message indicating the risk level and any evidence found.
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             # Parse request and response
@@ -50,12 +55,14 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
             response_headers = response.headers
 
             if "Content-Type" in response_headers and "text/html" in response_headers["Content-Type"]:
+                # Parse the HTML response
                 soup = BeautifulSoup(response_body, 'html.parser')
                 scripts = soup.find_all('script', src=True)
 
                 risk_flag = False
                 evidence = []
 
+                # Check each script tag
                 for script in scripts:
                     script_src = script['src']
                     if self.is_script_from_other_domain(request_host, script_src):
@@ -68,7 +75,9 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
                     return Alert(risk_category="Low", 
                                  description="Cross Domain Script Inclusion detected without integrity attribute)",
                                  msg_ref="pscanrules.crossdomainscriptinclusion",
-                                 evidence={evidence})
+                                 evidence=evidence,
+                                 cwe_id=self.get_cwe_id(),
+                                 wasc_id=self.get_wasc_id())
                 else:
                     return NoAlert()
 
@@ -79,4 +88,28 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
             return ScanError(description=str(e))
         
     def __str__(self) -> str:
+        """
+        Returns a string representation of the CrossDomainScriptInclusionScanRule object.
+
+        Returns:
+            str: A string representation of the CrossDomainScriptInclusionScanRule object.
+        """
         return "Cross Domain Script Inclusion"
+    
+    def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
+        return 829 # CWE-829: Inclusion of Functionality from Untrusted Control Sphere
+    
+    def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
+        return 15 # WASC-15: Application Misconfiguration

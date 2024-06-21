@@ -1,8 +1,8 @@
 import requests
 import logging
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-import re
 
 logger = logging.getLogger(__name__)
 
