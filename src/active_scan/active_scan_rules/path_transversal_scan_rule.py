@@ -2,14 +2,10 @@ import re
 import logging
 import requests
 from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
+from src.passive_scan.passive_scan_rules.utils.alert import Alert
 
 class PathTraversalScanRule:
-    MESSAGE_PREFIX = "ascanrules.pathtraversal."
-    ALERT_TAGS = {
-        "OWASP_2021_A01_BROKEN_AC",
-        "OWASP_2017_A05_BROKEN_AC",
-        "WSTG_V42_ATHZ_01_DIR_TRAVERSAL"
-    }
+
     NON_EXISTANT_FILENAME = "thishouldnotexistandhopefullyitwillnot"
     
     WIN_PATTERN = re.compile(r"\[drivers\]")
@@ -71,30 +67,6 @@ class PathTraversalScanRule:
     LOCAL_FILE_RELATIVE_PREFIXES = ["", "/", "\\"]
     LOGGER = logging.getLogger(__name__)
     
-    def get_id(self):
-        return 6
-    
-    def get_name(self):
-        return self.get_message("name")
-    
-    def get_description(self):
-        return "Description of the Path Traversal Vulnerability"
-    
-    def get_category(self):
-        return "SERVER"
-    
-    def get_solution(self):
-        return "Solution for the Path Traversal Vulnerability"
-    
-    def get_reference(self):
-        return "References for the Path Traversal Vulnerability"
-    
-    def get_risk(self):
-        return "HIGH"
-    
-    def get_alert_tags(self):
-        return self.ALERT_TAGS
-    
     def get_cwe_id(self):
         return 22
     
@@ -127,8 +99,10 @@ class PathTraversalScanRule:
             
             self.LOGGER.debug(f"Checking parameter [{param}] for Path Traversal to local files")
             
+            # tech_scope = self.check_tech_scope(base_url)
+            tech_scope = ["Windows", "Linux", "MacOS", "Tomcat"]
             # Check Windows file targets
-            if self.in_scope("Windows"):
+            if "Windows" in tech_scope:
                 for h in range(win_count):
                     if self.send_and_check_payload(base_url, param, self.WIN_LOCAL_FILE_TARGETS[h], self.WIN_PATTERN, 1) or self.is_stop():
                         return
@@ -141,7 +115,7 @@ class PathTraversalScanRule:
                                 return
             
             # Check Unix/Linux file targets
-            if self.in_scope("Linux") or self.in_scope("MacOS"):
+            if "Linux" in tech_scope or "MacOS" in tech_scope:
                 for h in range(nix_count):
                     if self.send_and_check_payload(base_url, param, self.NIX_LOCAL_FILE_TARGETS[h], self.NIX_PATTERN, 2) or self.is_stop():
                         return
@@ -162,7 +136,7 @@ class PathTraversalScanRule:
             sslash_pattern = "WEB-INF/web.xml"
             bslash_pattern = sslash_pattern.replace('/', '\\')
             
-            if self.in_scope("Tomcat"):
+            if "Tomcat" in tech_scope:
                 for idx in range(local_traversal_length):
                     if (self.send_and_check_payload(base_url, param, sslash_pattern, self.WAR_PATTERN, 4) or 
                         self.send_and_check_payload(base_url, param, bslash_pattern, self.WAR_PATTERN, 4) or 
@@ -207,8 +181,8 @@ class PathTraversalScanRule:
                         
                         error_matcher = error_pattern.search(msg.response.text)
                         if self.is_page_200(msg) and not error_matcher:
-                            self.create_unmatched_alert(param, prefixed_urlfilename).set_message(msg).r()
-                            return
+                            return self.create_unmatched_alert(param, prefixed_urlfilename)
+                            
         except Exception as e:
             self.LOGGER.warning(f"An error occurred while checking parameter [{param}] for Path Traversal. Caught {e.__class__.__name__} {e}")
     
@@ -226,8 +200,8 @@ class PathTraversalScanRule:
         
         match = contents_matcher.search(msg.response.text)
         if self.is_page_200(msg) and match:
-            self.create_matched_alert(param, new_value, match.group(), check).set_message(msg).r()
-            return True
+            return self.create_matched_alert(param, new_value, match.group(), check)
+            
         
         return False
     
@@ -252,65 +226,96 @@ class PathTraversalScanRule:
         return msg.response.status_code == 200
     
     def create_unmatched_alert(self, param, attack):
-        return AlertBuilder().set_confidence("LOW").set_param(param).set_attack(attack).set_alert_ref(f"{self.get_id()}-5")
+        return Alert(risk_category="High", msg_ref="ascanrules.pathtraversal")
+        # return AlertBuilder().set_confidence("LOW").set_param(param).set_attack(attack).set_alert_ref(f"{self.get_id()}-5")
     
     def create_matched_alert(self, param, attack, evidence, check):
-        return AlertBuilder().set_confidence("MEDIUM").set_param(param).set_attack(attack).set_evidence(evidence).set_alert_ref(f"{self.get_id()}-{check}")
+        return Alert(risk_category="High", msg_ref="ascanrules.pathtraversal", evidence=evidence)
+        # return AlertBuilder().set_confidence("MEDIUM").set_param(param).set_attack(attack).set_evidence(evidence).set_alert_ref(f"{self.get_id()}-{check}")
     
-    def in_scope(self, tech):
-        return True  # Placeholder for actual technology scope check
+    # def in_scope(self, tech):
+    #     return True  # Placeholder for actual technology scope check
     
+    def check_tech_scope(self, base_url):
+        """
+        Infer the technology used by the server from HTTP headers.
+        
+        :param base_url: The URL to scan.
+        :return: True if the inferred technology is in scope, False otherwise.
+        """
+        try:
+            response = requests.head(base_url, timeout=5)
+            server_header = response.headers.get("Server", "")
+            powered_by_header = response.headers.get("X-Powered-By", "")
+
+            # if "windows" == tech.lower():
+            #     if "windows" in server_header.lower() or "win32" in powered_by_header.lower():
+            #         return True              
+            # elif "linux" == tech.lower():
+            #     if "linux" in server_header.lower() or "unix" in powered_by_header.lower():
+            #         return True   
+            # elif "macos" == tech.lower():
+            #     if "macos" in server_header.lower() or "darwin" in powered_by_header.lower():
+            #         return True   
+            # elif "tomcat" == tech.lower():
+            #     if "tomcat" in server_header.lower():
+            #      tech = "Tomcat"
+            # else:
+            #     return False
+            tech = []
+            if "windows" in server_header.lower() or "win32" in powered_by_header.lower():
+                tech.append("Windows")
+            elif "linux" in server_header.lower() or "unix" in powered_by_header.lower():
+                tech.append("Linux")
+            elif "macos" in server_header.lower() or "darwin" in powered_by_header.lower():
+                tech.append("MacOS")
+            elif "tomcat" in server_header.lower():
+                tech.append("Tomcat")
+            else:
+                tech.append("Unknown")
+            return tech
+        except requests.RequestException as e:
+            self.LOGGER.debug(f"Error determining scope: {e}")
+            return False
+        
     def get_attack_strength(self):
-        return "HIGH"  # Placeholder for actual attack strength determination
+        return "INSANE"
     
     def get_alert_threshold(self):
-        return "LOW"  # Placeholder for actual alert threshold determination
+        return "LOW" 
     
     def is_stop(self):
-        return False  # Placeholder for actual stop condition check
+        return False  
     
-    def get_message(self, key):
-        return f"Message for {key}"  # Placeholder for actual message retrieval
+# class AlertBuilder:
+#     def __init__(self):
+#         self.alert = {}
+    
+#     def set_confidence(self, confidence):
+#         self.alert['confidence'] = confidence
+#         return self
+    
+#     def set_param(self, param):
+#         self.alert['param'] = param
+#         return self
+    
+#     def set_attack(self, attack):
+#         self.alert['attack'] = attack
+#         return self
+    
+#     def set_alert_ref(self, alert_ref):
+#         self.alert['alert_ref'] = alert_ref
+#         return self
+    
+#     def set_evidence(self, evidence):
+#         self.alert['evidence'] = evidence
+#         return self
+    
+#     def set_message(self, msg):
+#         self.alert['message'] = msg
+#         return self
+    
+#     def r(self):
+#         print("Alert raised:", self.alert)
 
-class AlertBuilder:
-    def __init__(self):
-        self.alert = {}
-    
-    def set_confidence(self, confidence):
-        self.alert['confidence'] = confidence
-        return self
-    
-    def set_param(self, param):
-        self.alert['param'] = param
-        return self
-    
-    def set_attack(self, attack):
-        self.alert['attack'] = attack
-        return self
-    
-    def set_alert_ref(self, alert_ref):
-        self.alert['alert_ref'] = alert_ref
-        return self
-    
-    def set_evidence(self, evidence):
-        self.alert['evidence'] = evidence
-        return self
-    
-    def set_message(self, msg):
-        self.alert['message'] = msg
-        return self
-    
-    def r(self):
-        print("Alert raised:", self.alert)
 
-# Example usage
-def main():
-    logging.basicConfig(level=logging.DEBUG)
-    url = "https://testportal.helium.sh/mod.php"
-    param = "kategori"
-
-    scan_rule = PathTraversalScanRule()
-    scan_rule.scan(url, param)
-
-if __name__ == "__main__":
-    main()
