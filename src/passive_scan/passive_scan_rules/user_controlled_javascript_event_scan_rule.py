@@ -12,6 +12,7 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
     Passive scan rule to check for user-controlled JavaScript events.
     """
     
+    # List of JavaScript event attributes to check for
     JAVASCRIPT_EVENTS = [
         "onabort", "onbeforeunload", "onblur", "onchange", "onclick", 
         "oncontextmenu", "ondblclick", "ondrag", "ondragend", "ondragenter", 
@@ -23,15 +24,21 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
         "onstorage", "onsubmit", "onunload"
     ]
     
-    def check_risk(self, request: Request, response: Response) -> str:
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for user-controlled JavaScript events in the response.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - str: A message indicating the risk level.
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
+            # Check if the response is HTML
             if "Content-Type" in response.headers and "text/html" in response.headers["Content-Type"]:
+                # Parse the HTML response
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
                 # Collect all form and URL parameters
@@ -64,9 +71,12 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
     def get_parameters(self, url: str) -> set:
         """
         Extract parameters from the URL.
+
+        Args:
+            url (str): The URL to extract parameters from.
         
         Returns:
-        - set: A set of parameter values.
+            set: A set of parameter values.
         """
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
@@ -76,10 +86,28 @@ class UserControlledJavascriptEventScanRule(BasePassiveScanRule):
         return params
     
     def __str__(self) -> str:
+        """
+        Returns a string representation of the UserControlledJavascriptEventScanRule object.
+
+        Returns:
+            str: A string representation of the UserControlledJavascriptEventScanRule object.
+        """
         return "User-Controlled JavaScript Event"
 
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 20 # CWE-20: Improper Input Validation
     
     def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
         return 20 # WASC-20: Improper Input Handling

@@ -11,11 +11,14 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
     """
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
-        Check for CSRF countermeasures in HTML forms.
+        Check for the presence of CSRF countermeasures in HTML forms.
+
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
 
         Returns:
-        - Alert if a form without CSRF countermeasures is found.
-        - NoAlert if all forms have CSRF countermeasures.
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             # Check if the response is HTML
@@ -28,6 +31,7 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
                 if not forms:
                     return NoAlert()
 
+                # List of CSRF token names to check for
                 csrf_tokens = ["csrf_token", "csrf", "xsrf_token", "X-CSRF-Token"]
                 ignore_list = self.get_csrf_ignore_list()
                 ignore_att_name = self.get_csrf_ignore_att_name()
@@ -65,6 +69,16 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
             return ScanError(description=str(e))
         
     def form_on_ignore_list(self, form, ignore_list):
+        """
+        Check if the form is in the ignore list.
+
+        Args:
+            form (Tag): The form element.
+            ignore_list (list): List of form IDs or names to ignore.
+
+        Returns:
+            bool: True if the form is in the ignore list, False otherwise.
+        """
         form_id = form.get('id')
         form_name = form.get('name')
         for ignore in ignore_list:
@@ -74,22 +88,58 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
         return False
 
     def get_csrf_ignore_list(self):
+        """
+        Get the list of forms to ignore for CSRF check.
+
+        Returns:
+            list: List of form IDs or names to ignore.
+        """
         # Replace this method with the actual implementation to retrieve the ignore list from configuration
         return []
 
     def get_csrf_ignore_att_name(self):
+        """
+        Get the attribute name to ignore forms for CSRF check.
+
+        Returns:
+            str: The attribute name to ignore forms.
+        """
         # Replace this method with the actual implementation to retrieve the ignore attribute name from configuration
         return None
 
     def get_csrf_ignore_att_value(self):
+        """
+        Get the attribute value to ignore forms for CSRF check.
+
+        Returns:
+            str: The attribute value to ignore forms.
+        """
         # Replace this method with the actual implementation to retrieve the ignore attribute value from configuration
         return None
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the CsrfCountermeasuresScanRule object.
+
+        Returns:
+            str: A string representation of the CsrfCountermeasuresScanRule object.
+        """
         return "CSRF Countermeasures Scan Rule"
     
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 352 # CWE-352: Cross-Site Request Forgery (CSRF)
 
     def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
         return 9 # WASC-9: Cross-Site Request Forgery

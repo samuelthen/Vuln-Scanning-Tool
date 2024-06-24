@@ -17,6 +17,9 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
     ERRORS_PAYLOAD_CATEGORY = "Application-Errors"
 
     def __init__(self):
+        """
+        Initialize the ApplicationErrorScanRule with default settings.
+        """
         super().__init__()
         self.matcher = None
         self.payload_provider = lambda: self.DEFAULT_ERRORS
@@ -30,12 +33,15 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             with open(self.APP_ERRORS_FILE, 'r') as f:
                 self.matcher = self.ContentMatcher(f.read())
         except (IOError, ValueError) as e:
-            logger.warn(f"Unable to read {self.APP_ERRORS_FILE} input file: {e}. Falling back to default.")
+            logger.warning(f"Unable to read {self.APP_ERRORS_FILE} input file: {e}. Falling back to default.")
             self.matcher = self.ContentMatcher(self.get_default_patterns())
 
     def get_default_patterns(self):
         """
         Fallback method to get default patterns if the external file is not accessible.
+
+        Returns:
+            str: A string containing default error patterns.
         """
         return """
         <patterns>
@@ -49,20 +55,39 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
         Inner class to handle content matching with patterns.
         """
         def __init__(self, patterns):
+            """
+            Initialize the ContentMatcher with patterns.
+
+            Args:
+                patterns (str): A string containing error patterns.
+            """
             self.patterns = re.findall(r'<pattern>(.*?)</pattern>', patterns, re.DOTALL)
 
         def find_in_content(self, content):
+            """
+            Find matching patterns in the content.
+
+            Args:
+                content (str): The content to search patterns in.
+
+            Returns:
+                str: The first matching pattern found, or None if no match is found.
+            """
             for pattern in self.patterns:
                 if re.search(pattern, content, re.IGNORECASE):
                     return pattern
             return None
 
-    def check_risk(self, request: Request, response: Response) -> str:
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Perform the passive scanning of application errors inside the response content.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - str: A message indicating the risk level.
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             # Skip non-HTML or non-plaintext responses
@@ -110,10 +135,28 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             return ScanError(description=str(e))
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the ApplicationErrorScanRule object.
+
+        Returns:
+            str: A string representation of the ApplicationErrorScanRule object.
+        """
         return "Application Error"
     
     def get_cwe_id(self):
-        return 200
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
+        return 200  # CWE-200: Information Exposure
     
     def get_wasc_id(self):
-        return 13
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
+        return 13  # WASC-13: Information Leakage

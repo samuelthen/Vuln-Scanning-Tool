@@ -11,6 +11,7 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
     Passive scan rule to check for information disclosure in HTTP Referrer headers.
     """
     
+    # Regular expressions for detecting sensitive information patterns
     EMAIL_PATTERN = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b")
     CREDIT_CARD_PATTERN = re.compile(
         r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|"
@@ -18,12 +19,16 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
     )
     US_SSN_PATTERN = re.compile(r"\b[0-9]{3}-[0-9]{2}-[0-9]{4}\b")
 
+    # List of sensitive words to check in referrer URLs
     SENSITIVE_WORDS = [
         "user", "username", "pass", "password", "pwd",
         "token", "ticket", "session", "jsessionid", "sessionid"
     ]
 
     def __init__(self):
+        """
+        Initialize the scan rule with the list of sensitive words.
+        """
         self.sensitive_words = self.SENSITIVE_WORDS
 
     class BinList:
@@ -48,6 +53,13 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for sensitive information in HTTP Referrer headers.
+
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
+        Returns:
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             referrer_headers = request.headers.get('Referer', [])
@@ -55,7 +67,9 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                 return NoAlert()
             
             for referrer in referrer_headers:
+                # Check if the referrer is from a different domain
                 if not self.is_same_domain(request.url, referrer):
+                    # Check for sensitive information in the referrer URL
                     sensitive_info = self.contains_sensitive_information(referrer)
                     if sensitive_info:
                         return Alert(
@@ -65,6 +79,7 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
+                    # Check for credit card information in the referrer URL
                     if self.is_credit_card(referrer):
                         bin_record = self.BinList.get(referrer)
                         description = "Credit card number found in Referrer header"
@@ -77,6 +92,7 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
+                    # Check for email address in the referrer URL
                     if self.is_email_address(referrer):
                         return Alert(
                             risk_category="Informational",
@@ -85,6 +101,7 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
+                    # Check for US Social Security Number in the referrer URL
                     if self.is_us_ssn(referrer):
                         return Alert(
                             risk_category="Informational",
@@ -95,12 +112,19 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                         )
             return NoAlert()
         except Exception as e:
+            # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
             return ScanError(description=str(e))
 
     def contains_sensitive_information(self, referrer: str) -> str:
         """
         Check if the referrer URL contains sensitive information.
+
+        Args:
+            referrer (str): The referrer URL.
+
+        Returns:
+            str: The sensitive word found in the referrer URL, or None if not found.
         """
         referrer_lower = referrer.lower()
         for word in self.sensitive_words:
@@ -109,17 +133,51 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
         return None
 
     def is_email_address(self, value: str) -> bool:
+        """
+        Check if the value is an email address.
+
+        Args:
+            value (str): The value to check.
+
+        Returns:
+            bool: True if the value is an email address, False otherwise.
+        """
         return bool(self.EMAIL_PATTERN.search(value))
 
     def is_credit_card(self, value: str) -> bool:
+        """
+        Check if the value is a credit card number.
+
+        Args:
+            value (str): The value to check.
+
+        Returns:
+            bool: True if the value is a credit card number, False otherwise.
+        """
         return bool(self.CREDIT_CARD_PATTERN.search(value))
 
     def is_us_ssn(self, value: str) -> bool:
+        """
+        Check if the value is a US Social Security Number.
+
+        Args:
+            value (str): The value to check.
+
+        Returns:
+            bool: True if the value is a US Social Security Number, False otherwise.
+        """
         return bool(self.US_SSN_PATTERN.search(value))
 
     def is_same_domain(self, url: str, referrer: str) -> bool:
         """
         Check if the referrer URL is from the same domain as the request URL.
+
+        Args:
+            url (str): The request URL.
+            referrer (str): The referrer URL.
+
+        Returns:
+            bool: True if the referrer is from the same domain, False otherwise.
         """
         from urllib.parse import urlparse
         try:
@@ -131,10 +189,28 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
             return False
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the InformationDisclosureReferrerScanRule object.
+
+        Returns:
+            str: A string representation of the InformationDisclosureReferrerScanRule object.
+        """
         return "Information Disclosure in Referrer Header"
 
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 200  # CWE-200: Information Exposure
 
     def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
         return 13  # WASC-13: Information Leakage

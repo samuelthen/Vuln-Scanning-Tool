@@ -14,8 +14,12 @@ class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
         """
         Check for missing Content-Security-Policy headers or obsolete CSP headers.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - Alert class
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             # Check if the response is HTML
@@ -49,10 +53,28 @@ class ContentSecurityPolicyMissingScanRule(BasePassiveScanRule):
             return ScanError(description=str(e))
         
     def __str__(self) -> str:
+        """
+        Returns a string representation of the ContentSecurityPolicyMissingScanRule object.
+
+        Returns:
+            str: A string representation of the ContentSecurityPolicyMissingScanRule object.
+        """
         return "Content Security Policy (CSP) Header"
     
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 693 # CWE-693: Protection Mechanism Failure
 
     def get_wasc_id(self):
-        return 15; # WASC-15: Application Misconfiguration
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
+        return 15 # WASC-15: Application Misconfiguration

@@ -12,15 +12,20 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
     Passive scan rule to check for user-controlled HTML attributes.
     """
     
-    def check_risk(self, request: Request, response: Response) -> str:
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for user-controlled HTML attributes in the response.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - str: A message indicating the risk level.
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             if "Content-Type" in response.headers and "text/html" in response.headers["Content-Type"]:
+                # Parse the HTML response
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
                 # Collect all form and URL parameters
@@ -53,9 +58,12 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
     def get_parameters(self, url: str) -> set:
         """
         Extract parameters from the URL.
+
+        Args:
+            url (str): The URL to extract parameters from.
         
         Returns:
-        - set: A set of parameter values.
+            set: A set of parameter values.
         """
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
@@ -68,8 +76,12 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
         """
         Determine if the attribute value is potentially harmful.
 
+        Args:
+            value (str): The attribute value.
+            param (str): The parameter value to check against.
+
         Returns:
-        - bool: True if potentially harmful, False otherwise.
+            bool: True if potentially harmful, False otherwise.
         """
         # Check for protocol and domain control
         parsed_url = urlparse(value)
@@ -84,10 +96,28 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
         return False
     
     def __str__(self) -> str:
+        """
+        Returns a string representation of the UserControlledHTMLAttributesScanRule object.
+
+        Returns:
+            str: A string representation of the UserControlledHTMLAttributesScanRule object.
+        """
         return "User-Controlled HTML Attribute"
 
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 20 # CWE-20: Improper Input Validation
     
     def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
         return 20 # WASC-20: Improper Input Handling

@@ -15,12 +15,16 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
     MALFORMED_MAX_AGE = re.compile(r"['+|\"+]\s*max", re.IGNORECASE)
     WELL_FORMED_PATT = re.compile(r"[ -~]*", re.IGNORECASE)  # Corrected pattern
 
-    def check_risk(self, request: Request, response: Response) -> str:
+    def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for issues with the Strict-Transport-Security header.
 
+        Args:
+            request (Request): The HTTP request object.
+            response (Response): The HTTP response object.
+
         Returns:
-        - Alert
+            Alert: An Alert object indicating the result of the risk check.
         """
         try:
             # Only check secure (HTTPS) responses
@@ -58,7 +62,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                     sts_option_string = sts_headers.lower()
                     if not self.WELL_FORMED_PATT.match(sts_option_string):
                         return Alert(risk_category="Low", 
-                                     description="malformed Strict-Transport-Security header content",
+                                     description="Malformed Strict-Transport-Security header content",
                                      msg_ref="pscanrules.stricttransportsecurity.compliance.malformed.content",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
@@ -76,7 +80,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                                      wasc_id=self.get_wasc_id())                    
                     if self.MALFORMED_MAX_AGE.search(sts_option_string):
                         return Alert(risk_category="Low", 
-                                     description="malformed max-age in Strict-Transport-Security header",
+                                     description="Malformed max-age in Strict-Transport-Security header",
                                      msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.malformed",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())   
@@ -105,10 +109,13 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
 
     def get_meta_hsts_evidence(self, response: Response) -> str:
         """
-        Checks the HTML content for META tag setting HSTS.
+        Check the HTML content for META tag setting HSTS.
+
+        Args:
+            response (Response): The HTTP response object.
 
         Returns:
-        - str: The META tag content if found, otherwise None.
+            str: The META tag content if found, otherwise None.
         """
         if "text/html" in response.headers.get("Content-Type", ""):
             from bs4 import BeautifulSoup
@@ -122,16 +129,37 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
         """
         Check if the response is a redirect.
 
+        Args:
+            response (Response): The HTTP response object.
+
         Returns:
-        - bool: True if the response is a redirect, otherwise False.
+            bool: True if the response is a redirect, otherwise False.
         """
         return response.status_code in range(300, 400) and 'Location' in response.headers
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the StrictTransportSecurityScanRule object.
+
+        Returns:
+            str: A string representation of the StrictTransportSecurityScanRule object.
+        """
         return "Strict-Transport-Security (HSTS) Header"
 
     def get_cwe_id(self):
+        """
+        Get the CWE ID for the scan rule.
+
+        Returns:
+            int: The CWE ID.
+        """
         return 319 # CWE-319: Cleartext Transmission of Sensitive Information
 
     def get_wasc_id(self):
+        """
+        Get the WASC ID for the scan rule.
+
+        Returns:
+            int: The WASC ID.
+        """
         return 15 # WASC-15: Application Misconfiguration

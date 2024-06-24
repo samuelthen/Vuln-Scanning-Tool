@@ -1,4 +1,3 @@
-import csv
 import yaml
 import logging
 import requests
@@ -22,7 +21,7 @@ def access_nested_dict(data, key_string):
 
 if __name__ == '__main__':
     start_url = 'https://testportal.helium.sh'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=1)
+    spider = WebSpider(base_url=start_url, max_pages=5)
     urls, out_scope_urls = spider.crawl()
     crawl_results = {
         "in_scope_urls": urls,
