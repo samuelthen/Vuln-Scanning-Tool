@@ -41,7 +41,7 @@ class PathTraversalScanRule:
         "d:\\Windows\\system.ini",
         "d:/Windows/system.ini",
         "file:///d:/Windows/system.ini",
-        "file:///d:\\Windows\\system.ini",
+        "file:///d:\\Windows/system.ini",
         "file:\\\\\\d:\\Windows\\system.ini",
         "file:\\\\\\d:/Windows/system.ini"
     ]
@@ -90,7 +90,7 @@ class PathTraversalScanRule:
     
     ALERT = []
 
-    def scan(self, base_url, param):
+    def scan(self, base_url, param, method="GET"):
         try:
             self.ALERT.clear()
             nix_count, win_count, dir_count, local_traversal_length, include_null_byte_injection_payload = self.get_attack_parameters(self.attack_strength)
@@ -99,17 +99,17 @@ class PathTraversalScanRule:
             logger.debug(f"Checking parameter [{param}] for Path Traversal to local files")
             
             if self.scope["Windows"]:
-                self.check_file_targets(base_url, param, self.WIN_LOCAL_FILE_TARGETS, self.WIN_PATTERN, win_count, include_null_byte_injection_payload, 1)
+                self.check_file_targets(base_url, param, self.WIN_LOCAL_FILE_TARGETS, self.WIN_PATTERN, win_count, include_null_byte_injection_payload, 1, method)
             
             if self.scope["Linux"] or self.scope["MacOS"]:
-                self.check_file_targets(base_url, param, self.NIX_LOCAL_FILE_TARGETS, self.NIX_PATTERN, nix_count, include_null_byte_injection_payload, 2)
+                self.check_file_targets(base_url, param, self.NIX_LOCAL_FILE_TARGETS, self.NIX_PATTERN, nix_count, include_null_byte_injection_payload, 2, method)
             
-            self.check_directory_targets(base_url, param, dir_count)
+            self.check_directory_targets(base_url, param, dir_count, method)
             
             if self.scope["Tomcat"]:
-                self.check_web_app_files(base_url, param, local_traversal_length)
+                self.check_web_app_files(base_url, param, local_traversal_length, method)
             
-            self.check_url_filename_traversal(base_url, param)
+            self.check_url_filename_traversal(base_url, param, method)
 
             return self.ALERT                
         except Exception as e:
@@ -125,29 +125,29 @@ class PathTraversalScanRule:
         elif attack_strength == "INSANE":
             return len(self.NIX_LOCAL_FILE_TARGETS), len(self.WIN_LOCAL_FILE_TARGETS), len(self.LOCAL_DIR_TARGETS), 4, True
     
-    def check_file_targets(self, base_url, param, targets, pattern, count, include_null_byte_injection_payload, check):
+    def check_file_targets(self, base_url, param, targets, pattern, count, include_null_byte_injection_payload, check, method):
         for h in range(count):
-            if self.send_and_check_payload(base_url, param, targets[h], pattern, check):
+            if self.send_and_check_payload(base_url, param, targets[h], pattern, check, method):
                 return
             
             if include_null_byte_injection_payload:
-                if self.send_and_check_payload(base_url, param, targets[h] + '\x00', pattern, check):
+                if self.send_and_check_payload(base_url, param, targets[h] + '\x00', pattern, check, method):
                     return
-                if self.send_and_check_payload(base_url, param, f"{targets[h]}\x00", pattern, check):
+                if self.send_and_check_payload(base_url, param, f"{targets[h]}\x00", pattern, check, method):
                     return
     
-    def check_directory_targets(self, base_url, param, dir_count):
+    def check_directory_targets(self, base_url, param, dir_count, method):
         for h in range(dir_count):
-            if self.send_and_check_payload(base_url, param, self.LOCAL_DIR_TARGETS[h], self.DIR_PATTERN, 3):
+            if self.send_and_check_payload(base_url, param, self.LOCAL_DIR_TARGETS[h], self.DIR_PATTERN, 3, method):
                 return
     
-    def check_web_app_files(self, base_url, param, local_traversal_length):
+    def check_web_app_files(self, base_url, param, local_traversal_length, method):
         sslash_pattern = "WEB-INF/web.xml"
         bslash_pattern = sslash_pattern.replace('/', '\\')
         
         for _ in range(local_traversal_length):
             if any(
-                self.send_and_check_payload(base_url, param, pattern, self.WAR_PATTERN, 4)
+                self.send_and_check_payload(base_url, param, pattern, self.WAR_PATTERN, 4, method)
                 for pattern in [sslash_pattern, bslash_pattern, '/' + sslash_pattern, '\\' + bslash_pattern]
             ):
                 return
@@ -155,8 +155,8 @@ class PathTraversalScanRule:
             sslash_pattern = "../" + sslash_pattern
             bslash_pattern = "..\\" + bslash_pattern
     
-    def check_url_filename_traversal(self, base_url, param):
-        msg = self.get_new_msg(base_url)
+    def check_url_filename_traversal(self, base_url, param, method):
+        msg = self.get_new_msg(base_url, method)
         self.set_parameter(msg, param, self.NON_EXISTANT_FILENAME)
         try:
             self.send_and_receive(msg)
@@ -174,7 +174,7 @@ class PathTraversalScanRule:
             for prefix in self.LOCAL_FILE_RELATIVE_PREFIXES:
                 
                 prefixed_urlfilename = prefix + urlfilename
-                msg = self.get_new_msg(base_url)
+                msg = self.get_new_msg(base_url, method)
                 self.set_parameter(msg, param, prefixed_urlfilename)
                 
                 try:
@@ -185,10 +185,10 @@ class PathTraversalScanRule:
                 
                 error_matcher = error_pattern.search(msg.response.text)
                 if self.is_page_200(msg) and not error_matcher:
-                    return self.create_unmatched_alert(param, prefixed_urlfilename)
+                    return self.create_unmatched_alert(param, prefixed_urlfilename, method)
     
-    def send_and_check_payload(self, base_url, param, new_value, contents_matcher, check):
-        msg = self.get_new_msg(base_url)
+    def send_and_check_payload(self, base_url, param, new_value, contents_matcher, check, method):
+        msg = self.get_new_msg(base_url, method)
         self.set_parameter(msg, param, new_value)
         
         logger.debug(f"Checking parameter [{param}] for Path Traversal (local file) with value [{new_value}]")
@@ -201,12 +201,12 @@ class PathTraversalScanRule:
         
         match = contents_matcher.search(msg.response.text)
         if self.is_page_200(msg) and match:
-            self.create_matched_alert(param, new_value, match.group(), check)
+            self.create_matched_alert(param, new_value, match.group(), check, method)
             return True
         return False
     
-    def get_new_msg(self, base_url):
-        return requests.Request('GET', base_url)
+    def get_new_msg(self, base_url, method):
+        return requests.Request(method, base_url)
     
     def send_and_receive(self, msg):
         prepared = msg.prepare()
@@ -216,48 +216,34 @@ class PathTraversalScanRule:
         return response
     
     def set_parameter(self, msg, param, value):
-        url_parts = list(urlparse(msg.url))
-        query = dict(parse_qs(url_parts[4]))
-        query[param] = value
-        url_parts[4] = urlencode(query, doseq=True)
-        msg.url = urlunparse(url_parts)
-    
+        if msg.method == 'GET':
+            url_parts = list(urlparse(msg.url))
+            query = dict(parse_qs(url_parts[4]))
+            query[param] = [value]
+            url_parts[4] = urlencode(query, doseq=True)
+            msg.url = urlunparse(url_parts)
+        elif msg.method == 'POST':
+            if msg.data is None:
+                msg.data = {}
+            elif isinstance(msg.data, str):
+                msg.data = parse_qs(msg.data)
+            msg.data[param] = value
+        msg.prepare()
+
     def is_page_200(self, msg):
         return msg.response.status_code == 200
     
-    def create_unmatched_alert(self, param, attack):
+    def create_unmatched_alert(self, param, attack, method):
         self.ALERT.append(str(Alert(risk_category="High", 
                                     msg_ref="ascanrules.pathtraversal",
                                     param=param,
-                                    attack=attack)))
+                                    attack=attack,
+                                    method=method)))
     
-    def create_matched_alert(self, param, attack, evidence, check):
+    def create_matched_alert(self, param, attack, evidence, check, method):
         self.ALERT.append(str(Alert(risk_category="High", 
-                                    msg_ref="ascanrules.pathtraversal", 
+                                    msg_ref=f"https://testportal.helium.sh/mod.php?kategori={attack}", 
                                     param=param,
                                     attack=attack,
-                                    evidence=evidence)))
-    
-    def check_tech_scope(self, base_url):
-        try:
-            response = requests.head(base_url, timeout=5)
-            server_header = response.headers.get("Server", "")
-            powered_by_header = response.headers.get("X-Powered-By", "")
-            tech = []
-            if "windows" in server_header.lower() or "win32" in powered_by_header.lower():
-                tech.append("Windows")
-            elif "linux" in server_header.lower() or "unix" in powered_by_header.lower():
-                tech.append("Linux")
-            elif "macos" in server_header.lower() or "darwin" in powered_by_header.lower():
-                tech.append("MacOS")
-            elif "tomcat" in server_header.lower():
-                tech.append("Tomcat")
-            else:
-                tech.append("Unknown")
-
-            print(tech)
-            return tech
-        except requests.RequestException as e:
-            logger.debug(f"Error determining scope: {e}")
-            print("ok")
-            return False
+                                    evidence=evidence,
+                                    method=method)))
