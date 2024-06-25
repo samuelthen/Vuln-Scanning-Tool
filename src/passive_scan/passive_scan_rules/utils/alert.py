@@ -16,7 +16,9 @@ class Alert:
     """
     VALID_RISK_CATEGORIES = {"high", "medium", "low", "informational", "no alert", "error"}
 
-    def __init__(self, risk_category: str, msg_ref=None, description=None, evidence=None, cwe_id=None, wasc_id=None):
+    def __init__(self, risk_category: str, msg_ref=None, description=None, 
+                 evidence=None, cwe_id=None, wasc_id=None,
+                 attack=None, param=None, method=None):
         """
         Constructs all the necessary attributes for the Alert object.
 
@@ -40,6 +42,9 @@ class Alert:
         self.evidence = evidence
         self.cwe_id = cwe_id
         self.wasc_id = wasc_id
+        self.attack = attack
+        self.param = param
+        self.method = method
 
     def get(self):
         """
