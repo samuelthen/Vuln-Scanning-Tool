@@ -5,16 +5,15 @@ from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
 from src.passive_scan.passive_scan_rules.utils.alert import Alert
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class PathTraversalScanRule:
     VALID_ATTACK_STRENGTH = {"LOW", "MEDIUM", "HIGH", "INSANE"}
 
     def __init__(self, attack_strength="LOW"):
-        if attack_strength.upper() not in self.VALID_ATTACK_STRENGTH:
-            raise ValueError(f"Invalid risk category '{attack_strength}'. Valid options are: {self.VALID_ATTACK_STRENGTH}")
-        
-        self.attack_strength = attack_strength.upper()
+        attack_strength = attack_strength.upper()
+        if attack_strength not in self.VALID_ATTACK_STRENGTH:
+            raise ValueError(f"Invalid attack strength '{attack_strength}'. Valid options are: {self.VALID_ATTACK_STRENGTH}")
+        self.attack_strength = attack_strength
         self.scope = {
             'Windows': True,
             'Linux': True,
@@ -22,16 +21,16 @@ class PathTraversalScanRule:
             'Tomcat': True
         }
 
-    NON_EXISTANT_FILENAME = "thishouldnotexistandhopefullyitwillnot"
+    NON_EXISTENT_FILENAME = "thishouldnotexistandhopefullyitwillnot"
     
     WIN_PATTERN = re.compile(r"\[drivers\]")
     WIN_LOCAL_FILE_TARGETS = [
         "c:/Windows/system.ini",
         "../../../../../../../../../../../../../../../../Windows/system.ini",
         "c:\\Windows\\system.ini",
-        "..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Windows\\system.ini",
+        "..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Windows\\system.ini",
         "/../../../../../../../../../../../../../../../../Windows/system.ini",
-        "\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Windows\\system.ini",
+        "\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\..\\Windows\\system.ini",
         "Windows/system.ini",
         "Windows\\system.ini",
         "file:///c:/Windows/system.ini",
@@ -42,7 +41,7 @@ class PathTraversalScanRule:
         "d:/Windows/system.ini",
         "file:///d:/Windows/system.ini",
         "file:///d:\\Windows/system.ini",
-        "file:\\\\\\d:\\Windows\\system.ini",
+        "file:\\\\\\d:\\Windows/system.ini",
         "file:\\\\\\d:/Windows/system.ini"
     ]
     
@@ -88,56 +87,64 @@ class PathTraversalScanRule:
     def get_wasc_id(self):
         return 33
     
-    ALERT = []
+    ALERTS = []
 
-    def scan(self, base_url, param, method="GET"):
+    def scan(self, base_url, param, value=None, method="GET"):
         try:
-            self.ALERT.clear()
-            nix_count, win_count, dir_count, local_traversal_length, include_null_byte_injection_payload = self.get_attack_parameters(self.attack_strength)
+            self.ALERTS.clear()
+            attack_params = self.get_attack_parameters(self.attack_strength)
             
-            logger.debug(f"Attacking at Attack Strength: {self.attack_strength}")
+            logger.debug(f"Attacking with Attack Strength: {self.attack_strength}")
             logger.debug(f"Checking parameter [{param}] for Path Traversal to local files")
             
             if self.scope["Windows"]:
-                self.check_file_targets(base_url, param, self.WIN_LOCAL_FILE_TARGETS, self.WIN_PATTERN, win_count, include_null_byte_injection_payload, 1, method)
+                self.check_targets(base_url, param, self.WIN_LOCAL_FILE_TARGETS, self.WIN_PATTERN, attack_params[1], attack_params[4], 1, method, value)
             
             if self.scope["Linux"] or self.scope["MacOS"]:
-                self.check_file_targets(base_url, param, self.NIX_LOCAL_FILE_TARGETS, self.NIX_PATTERN, nix_count, include_null_byte_injection_payload, 2, method)
+                self.check_targets(base_url, param, self.NIX_LOCAL_FILE_TARGETS, self.NIX_PATTERN, attack_params[0], attack_params[4], 2, method, value)
             
-            self.check_directory_targets(base_url, param, dir_count, method)
+            self.check_directory_targets(base_url, param, attack_params[2], method)
             
             if self.scope["Tomcat"]:
-                self.check_web_app_files(base_url, param, local_traversal_length, method)
+                self.check_web_app_files(base_url, param, attack_params[3], method)
             
             self.check_url_filename_traversal(base_url, param, method)
 
-            return self.ALERT                
+            return self.ALERTS                
         except Exception as e:
             logger.warning(f"An error occurred while checking parameter [{param}] for Path Traversal. Caught {e.__class__.__name__} {e}")
     
     def get_attack_parameters(self, attack_strength):
-        if attack_strength == "LOW":
-            return 2, 2, 2, 0, False
-        elif attack_strength == "MEDIUM":
-            return 2, 4, 4, 1, False
-        elif attack_strength == "HIGH":
-            return 4, 8, 7, 2, False
-        elif attack_strength == "INSANE":
-            return len(self.NIX_LOCAL_FILE_TARGETS), len(self.WIN_LOCAL_FILE_TARGETS), len(self.LOCAL_DIR_TARGETS), 4, True
+        parameters = {
+            "LOW": (2, 2, 2, 0, False),
+            "MEDIUM": (2, 4, 4, 1, False),
+            "HIGH": (4, 8, 7, 2, False),
+            "INSANE": (len(self.NIX_LOCAL_FILE_TARGETS), len(self.WIN_LOCAL_FILE_TARGETS), len(self.LOCAL_DIR_TARGETS), 4, True)
+        }
+        return parameters[attack_strength]
     
-    def check_file_targets(self, base_url, param, targets, pattern, count, include_null_byte_injection_payload, check, method):
+    def check_targets(self, base_url, param, targets, pattern, count, include_null_byte, check, method, value=None):
+        extension = None
+        if self.attack_strength == "INSANE" and value:
+            index = value.rfind('.')
+            if index != -1:
+                extension = value[index:]
+        
         for h in range(count):
+            logger.debug(f"Sending payload {targets[h]}")
             if self.send_and_check_payload(base_url, param, targets[h], pattern, check, method):
                 return
             
-            if include_null_byte_injection_payload:
-                if self.send_and_check_payload(base_url, param, targets[h] + '\x00', pattern, check, method):
-                    return
-                if self.send_and_check_payload(base_url, param, f"{targets[h]}\x00", pattern, check, method):
-                    return
+            if include_null_byte:
+                payloads = [targets[h] + '\x00', targets[h] + '\x00' + (extension or "")]
+                for payload in payloads:
+                    logger.debug(f"Sending payload with null byte injection: {payload}")
+                    if self.send_and_check_payload(base_url, param, payload, pattern, check, method):
+                        return
     
     def check_directory_targets(self, base_url, param, dir_count, method):
         for h in range(dir_count):
+            logger.debug(f"Sending directory payload {self.LOCAL_DIR_TARGETS[h]}")
             if self.send_and_check_payload(base_url, param, self.LOCAL_DIR_TARGETS[h], self.DIR_PATTERN, 3, method):
                 return
     
@@ -146,18 +153,15 @@ class PathTraversalScanRule:
         bslash_pattern = sslash_pattern.replace('/', '\\')
         
         for _ in range(local_traversal_length):
-            if any(
-                self.send_and_check_payload(base_url, param, pattern, self.WAR_PATTERN, 4, method)
-                for pattern in [sslash_pattern, bslash_pattern, '/' + sslash_pattern, '\\' + bslash_pattern]
-            ):
-                return
-            
+            for pattern in [sslash_pattern, bslash_pattern, '/' + sslash_pattern, '\\' + bslash_pattern]:
+                if self.send_and_check_payload(base_url, param, pattern, self.WAR_PATTERN, 4, method):
+                    return
             sslash_pattern = "../" + sslash_pattern
-            bslash_pattern = "..\\" + bslash_pattern
+            bslash_pattern = "..\\" + sslash_pattern
     
     def check_url_filename_traversal(self, base_url, param, method):
         msg = self.get_new_msg(base_url, method)
-        self.set_parameter(msg, param, self.NON_EXISTANT_FILENAME)
+        self.set_parameter(msg, param, self.NON_EXISTENT_FILENAME)
         try:
             self.send_and_receive(msg)
         except Exception as ex:
@@ -166,16 +170,15 @@ class PathTraversalScanRule:
         
         error_pattern = re.compile("Exception|Error", re.IGNORECASE)
         error_matcher = error_pattern.search(msg.response.text)
-        urlfilename = urlparse(msg.url).path.split("/")[-1]
+        url_filename = urlparse(msg.url).path.split("/")[-1]
         
-        if urlfilename and (not self.is_page_200(msg) or error_matcher):
-            logger.debug(f"It is possible to check for local file Path Traversal on the url filename on [{msg.method}] [{msg.url}], [{param}]")
+        if url_filename and (not self.is_page_200(msg) or error_matcher):
+            logger.debug(f"It is possible to check for local file Path Traversal on the URL filename on [{msg.method}] [{msg.url}], [{param}]")
             
             for prefix in self.LOCAL_FILE_RELATIVE_PREFIXES:
-                
-                prefixed_urlfilename = prefix + urlfilename
+                prefixed_url_filename = prefix + url_filename
                 msg = self.get_new_msg(base_url, method)
-                self.set_parameter(msg, param, prefixed_urlfilename)
+                self.set_parameter(msg, param, prefixed_url_filename)
                 
                 try:
                     self.send_and_receive(msg)
@@ -185,9 +188,10 @@ class PathTraversalScanRule:
                 
                 error_matcher = error_pattern.search(msg.response.text)
                 if self.is_page_200(msg) and not error_matcher:
-                    return self.create_unmatched_alert(param, prefixed_urlfilename, method)
+                    self.create_unmatched_alert(param, prefixed_url_filename, method)
+                    return
     
-    def send_and_check_payload(self, base_url, param, new_value, contents_matcher, check, method):
+    def send_and_check_payload(self, base_url, param, new_value, pattern, check, method):
         msg = self.get_new_msg(base_url, method)
         self.set_parameter(msg, param, new_value)
         
@@ -199,8 +203,9 @@ class PathTraversalScanRule:
             logger.debug(f"Caught {ex.__class__.__name__} {ex} when accessing: {msg.url}")
             return False
         
-        match = contents_matcher.search(msg.response.text)
+        match = pattern.search(msg.response.text)
         if self.is_page_200(msg) and match:
+            logger.debug(f"Match found: {match.group()}")
             self.create_matched_alert(param, new_value, match.group(), check, method)
             return True
         return False
@@ -216,34 +221,45 @@ class PathTraversalScanRule:
         return response
     
     def set_parameter(self, msg, param, value):
-        if msg.method == 'GET':
+        if msg.method.upper() == 'GET':
             url_parts = list(urlparse(msg.url))
             query = dict(parse_qs(url_parts[4]))
             query[param] = [value]
             url_parts[4] = urlencode(query, doseq=True)
             msg.url = urlunparse(url_parts)
-        elif msg.method == 'POST':
+        elif msg.method.upper() == 'POST':
             if msg.data is None:
                 msg.data = {}
             elif isinstance(msg.data, str):
                 msg.data = parse_qs(msg.data)
+            else:
+                msg.data = dict(msg.data)
             msg.data[param] = value
+            msg.headers['Content-Type'] = 'application/x-www-form-urlencoded'
         msg.prepare()
 
     def is_page_200(self, msg):
         return msg.response.status_code == 200
     
     def create_unmatched_alert(self, param, attack, method):
-        self.ALERT.append(str(Alert(risk_category="High", 
-                                    msg_ref="ascanrules.pathtraversal",
-                                    param=param,
-                                    attack=attack,
-                                    method=method)))
+        alert = Alert(
+            risk_category="High", 
+            msg_ref="ascanrules.pathtraversal",
+            param=param,
+            attack=attack,
+            method=method
+        )
+        logger.debug(f"Unmatched alert created: {alert}")
+        self.ALERTS.append(str(alert))
     
     def create_matched_alert(self, param, attack, evidence, check, method):
-        self.ALERT.append(str(Alert(risk_category="High", 
-                                    msg_ref=f"https://testportal.helium.sh/mod.php?kategori={attack}", 
-                                    param=param,
-                                    attack=attack,
-                                    evidence=evidence,
-                                    method=method)))
+        alert = Alert(
+            risk_category="High", 
+            msg_ref="ascanrules.pathtraversal", 
+            param=param,
+            attack=attack,
+            evidence=evidence,
+            method=method
+        )
+        logger.debug(f"Matched alert created: {alert}")
+        self.ALERTS.append(str(alert))
