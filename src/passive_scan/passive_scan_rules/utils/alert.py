@@ -17,7 +17,7 @@ class Alert:
     VALID_RISK_CATEGORIES = {"high", "medium", "low", "informational", "no alert", "error"}
 
     def __init__(self, risk_category: str, msg_ref=None, description=None, 
-                 evidence=None, cwe_id=None, wasc_id=None,
+                 evidence=None, cwe_id=None, wasc_id=None, confidence=None,
                  attack=None, param=None, method=None):
         """
         Constructs all the necessary attributes for the Alert object.

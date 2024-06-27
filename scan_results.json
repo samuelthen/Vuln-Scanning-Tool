@@ -1,62 +1,53 @@
 {
   "urls": {
     "in_scope_urls": [
-      "https://testportal.helium.sh/",
-      "https://testportal.helium.sh/mod.php?kategori=bukutamu",
-      "https://testportal.helium.sh/mod.php?kategori=sains&id=2",
-      "https://testportal.helium.sh",
-      "https://testportal.helium.sh/mod.php?kategori=teknologi&id=2"
+      "https://testportal.helium.sh/"
     ],
     "out_scope_urls": [
-      "http://3.bp.blogspot.com/-QEGCjBRemZI/TmXvInnLW0I/AAAAAAAAFe0/4SCcX1a5KMY/s1600/index1sv9-Copy.jpg",
-      "http://1.bp.blogspot.com/-FsbjFQKQ_Ag/TmXvM1m5gHI/AAAAAAAAFfQ/VF-CwCL2vIw/s1600/SpaceElevatorTether.jpg",
-      "http://3.bp.blogspot.com/-HFlPlHHwATM/TmXvHhKgHII/AAAAAAAAFew/eXHn1TwYU5Y/s1600/fic_orionsarm_OA_Space_Elevator_2__sbowers-Copy.jpg",
-      "http://studio7designs.com/contact-quote/",
-      "http://2.bp.blogspot.com/-y1N7QaCcpXs/TmXvHIIYafI/AAAAAAAAFes/pp0J_F3uAxI/s1600/carbon-nanotubes-Copy.jpg",
-      "http://4.bp.blogspot.com/-iwocJ5A5PQk/TmXvGqiPVWI/AAAAAAAAFeo/p2CmFoJ5-XU/s1600/0635352600-Copy.jpg",
-      "http://2.bp.blogspot.com/-WmIrRKwDKzY/TmXvJxb8YbI/AAAAAAAAFe8/z6OuuO1tFf4/s1600/seg-Copy.jpg",
-      "http://3.bp.blogspot.com/-Dcn0XZJbsh0/TmXvLwNffXI/AAAAAAAAFfI/8kiYJnXvO5k/s1600/SpaceElevatorClimbing-Copy.jpg",
-      "http://3.bp.blogspot.com/-_F5GkmM8-q0/TmXvSvlUnMI/AAAAAAAAFfg/NorSsLVlyZE/s1600/tower.gif",
-      "http://image.tempointeraktif.com/?id=63871&width=475",
-      "http://4.bp.blogspot.com/-UX2BokYW1uE/TmXvFKTf5vI/AAAAAAAAFeg/7omirLaFzM0/s1600/06_SpaceElevator.jpg",
-      "http://4.bp.blogspot.com/-O60DayH-a38/TmXvF5FQ35I/AAAAAAAAFek/9cM3S5TGC1I/s1600/471698669_4c5084ba1b-Copy.jpg",
-      "http://2.bp.blogspot.com/-Y-Hs1e4gQYo/TmXvRyaITLI/AAAAAAAAFfc/0vUppg-KrDA/s1600/sunrise1_web-1.jpg",
-      "http://1.bp.blogspot.com/-6BPt5whKO14/TmXvRPWSvMI/AAAAAAAAFfY/drLSd83rlK0/s1600/sunrise1_web.jpg",
-      "http://3.bp.blogspot.com/-TXiRXjZr0Zw/TmXvQSxDJWI/AAAAAAAAFfU/xu6WcPP4G8s/s1600/spacetetherfb2.png",
-      "http://4.bp.blogspot.com/-EzPou_dIzbA/TmXvJBCVExI/AAAAAAAAFe4/o86xVlvbfMo/s1600/MClimberOnTheWayUp-Copy.jpg",
-      "http://4.bp.blogspot.com/-iKJPxVx9-wc/TmXvMe77TsI/AAAAAAAAFfM/f6sl2Qm--P8/s1600/SpaceElevatorInClouds.jpg",
-      "http://2.bp.blogspot.com/-bZkWfTSNdc4/TmXvLMNXBzI/AAAAAAAAFfE/gwcRu_a0nqc/s1600/SpaceElevatorAnchor-Copy.jpg",
-      "http://4.bp.blogspot.com/-YJ6zOzbTaDA/TmXvKaau7xI/AAAAAAAAFfA/s1EoEVgc2e0/s1600/spaceelevator470-Copy.jpg"
+      "http://studio7designs.com/contact-quote/"
     ]
   },
   "passive_vulnerabilities": {
-    "informational": {
-      "User Controllable HTML Element Attribute (Potential XSS)": [
-        "https://testportal.helium.sh/mod.php?kategori=teknologi&id=2"
-      ]
-    },
+    "informational": {},
     "low": {
       "Cookie Without Secure Flag": {
         "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0f18f6923bd7e2db8146b6679df768eb; path=/",
-          "cwe_id": 614,
-          "wasc_id": 13
-        },
-        "https://testportal.helium.sh": {
-          "evidence": "PHPSESSID=0412715241666b28960ee7c10eab1a8e; path=/",
+          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
           "cwe_id": 614,
           "wasc_id": 13
         }
       },
       "Cookie No HttpOnly Flag": {
         "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0f18f6923bd7e2db8146b6679df768eb; path=/",
+          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
           "cwe_id": 1004,
           "wasc_id": 13
-        },
-        "https://testportal.helium.sh": {
-          "evidence": "PHPSESSID=0412715241666b28960ee7c10eab1a8e; path=/",
-          "cwe_id": 1004,
+        }
+      },
+      "Cookie without SameSite Attribute": {
+        "https://testportal.helium.sh/": {
+          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
+          "cwe_id": 1275,
+          "wasc_id": 13
+        }
+      },
+      "Hash Disclosure": {
+        "https://testportal.helium.sh/": {
+          "evidence": "MD4 / MD5 found: fa12e7d7fb45beefa36ca6c1560ebf5a",
+          "cwe_id": 200,
+          "wasc_id": 13
+        }
+      },
+      "X-Content-Type-Options Header Missing": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        }
+      },
+      "Server Leaks Information via \"X-Powered-By\" HTTP Response Header Field(s)": {
+        "https://testportal.helium.sh/": {
+          "evidence": "X-Powered-By: PHP/7.2.34",
+          "cwe_id": 200,
           "wasc_id": 13
         }
       }
@@ -66,68 +57,16 @@
         "https://testportal.helium.sh/": {
           "cwe_id": 1021,
           "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=bukutamu": {
-          "cwe_id": 1021,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=sains&id=2": {
-          "cwe_id": 1021,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh": {
-          "cwe_id": 1021,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=teknologi&id=2": {
-          "cwe_id": 1021,
-          "wasc_id": 15
         }
       },
       "Content Security Policy (CSP) Header Not Set": {
         "https://testportal.helium.sh/": {
           "cwe_id": 693,
           "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=bukutamu": {
-          "cwe_id": 693,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=sains&id=2": {
-          "cwe_id": 693,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh": {
-          "cwe_id": 693,
-          "wasc_id": 15
-        },
-        "https://testportal.helium.sh/mod.php?kategori=teknologi&id=2": {
-          "cwe_id": 693,
-          "wasc_id": 15
         }
       },
       "Absence of Anti-CSRF Tokens": {
         "https://testportal.helium.sh/": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
-        },
-        "https://testportal.helium.sh/mod.php?kategori=bukutamu": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
-        },
-        "https://testportal.helium.sh/mod.php?kategori=sains&id=2": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
-        },
-        "https://testportal.helium.sh": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
-        },
-        "https://testportal.helium.sh/mod.php?kategori=teknologi&id=2": {
           "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
           "cwe_id": 352,
           "wasc_id": 9

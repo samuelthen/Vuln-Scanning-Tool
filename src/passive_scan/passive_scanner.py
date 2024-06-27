@@ -19,6 +19,12 @@ from src.passive_scan.passive_scan_rules.cookie_http_only_scan_rule import Cooki
 from src.passive_scan.passive_scan_rules.csrf_countermeasures_scan_rule import CsrfCountermeasuresScanRule
 from src.passive_scan.passive_scan_rules.information_disclosure_in_url_scan_rule import InformationDisclosureInUrlScanRule
 from src.passive_scan.passive_scan_rules.information_disclosure_referrer_scan_rule import InformationDisclosureReferrerScanRule
+from src.passive_scan.passive_scan_rules.cookie_loosely_scoped_scan_rule import CookieLooselyScopedScanRule
+from src.passive_scan.passive_scan_rules.cookie_same_site_scan_rule import CookieSameSiteScanRule
+from src.passive_scan.passive_scan_rules.hash_disclosure_scan_rule import HashDisclosureScanRule
+from src.passive_scan.passive_scan_rules.user_controlled_cookie_scan_rule import UserControlledCookieScanRule
+from src.passive_scan.passive_scan_rules.x_content_type_options_scan_rule import XContentTypeOptionsScanRule
+from src.passive_scan.passive_scan_rules.x_powered_by_header_info_leak_scan_rule import XPoweredByHeaderInfoLeakScanRule
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +53,12 @@ class PassiveScanner:
         self.scan_rules.append(CsrfCountermeasuresScanRule())
         self.scan_rules.append(InformationDisclosureInUrlScanRule())
         self.scan_rules.append(InformationDisclosureReferrerScanRule())
+        self.scan_rules.append(CookieSameSiteScanRule())
+        self.scan_rules.append(CookieLooselyScopedScanRule())
+        self.scan_rules.append(HashDisclosureScanRule()) 
+        self.scan_rules.append(UserControlledCookieScanRule())
+        self.scan_rules.append(XContentTypeOptionsScanRule())
+        self.scan_rules.append(XPoweredByHeaderInfoLeakScanRule())
 
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:
