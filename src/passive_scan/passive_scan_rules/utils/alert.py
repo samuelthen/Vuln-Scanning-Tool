@@ -1,3 +1,6 @@
+from risk import Risk
+from confidence import Confidence
+
 class Alert:
     """
     A class to represent an alert for a vulnerability scan.
@@ -14,10 +17,10 @@ class Alert:
     Note:
         Additional attributes can be added as needed.
     """
-    VALID_RISK_CATEGORIES = {"high", "medium", "low", "informational", "no alert", "error"}
+    # VALID_RISK_CATEGORIES = {"high", "medium", "low", "informational", "no alert", "error"}
 
-    def __init__(self, risk_category: str, msg_ref=None, description=None, 
-                 evidence=None, cwe_id=None, wasc_id=None, confidence=None,
+    def __init__(self, risk_category: Risk, msg_ref=None, description=None, 
+                 evidence=None, cwe_id=None, wasc_id=None, confidence: Confidence=None,
                  attack=None, param=None, method=None):
         """
         Constructs all the necessary attributes for the Alert object.
@@ -33,10 +36,10 @@ class Alert:
         Raises:
             ValueError: If the risk_category is not in the VALID_RISK_CATEGORIES set.
         """
-        if risk_category.lower() not in self.VALID_RISK_CATEGORIES:
-            raise ValueError(f"Invalid risk category '{risk_category}'. Valid options are: {self.VALID_RISK_CATEGORIES}")
+        # if risk_category.lower() not in self.VALID_RISK_CATEGORIES:
+        #     raise ValueError(f"Invalid risk category '{risk_category}'. Valid options are: {self.VALID_RISK_CATEGORIES}")
         
-        self.risk_category = risk_category.lower()
+        self.risk_category = risk_category
         self.msg_ref =  msg_ref
         self.description = description
         self.evidence = evidence
@@ -45,6 +48,7 @@ class Alert:
         self.attack = attack
         self.param = param
         self.method = method
+        self.confidence = confidence
 
     def get(self):
         """
@@ -70,14 +74,14 @@ class NoAlert(Alert):
 
     Inherits from the Alert class.
     """
-    def __init__(self, description=None):
+    def __init__(self, description=None, msg_ref=None):
         """
         Constructs all the necessary attributes for the NoAlert object.
 
         Args:
             description (str, optional): A description of the alert. Defaults to None.
         """
-        super().__init__(risk_category="No Alert", description=description)
+        super().__init__(risk_category=Risk.NO_RISK, description=description, msg_ref=msg_ref)
 
 class ScanError(Alert):
     """
@@ -85,11 +89,11 @@ class ScanError(Alert):
 
     Inherits from the Alert class.
     """
-    def __init__(self, description=None):
+    def __init__(self, description=None, msg_ref=None):
         """
         Constructs all the necessary attributes for the ScanError object.
 
         Args:
             description (str, optional): A description of the alert. Defaults to None.
         """
-        super().__init__(risk_category="Error", description=description)
+        super().__init__(risk_category=Risk.ERROR, description=description, msg_ref=msg_ref)

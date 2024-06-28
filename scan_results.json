@@ -9,70 +9,8 @@
   },
   "passive_vulnerabilities": {
     "informational": {},
-    "low": {
-      "Cookie Without Secure Flag": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
-          "cwe_id": 614,
-          "wasc_id": 13
-        }
-      },
-      "Cookie No HttpOnly Flag": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
-          "cwe_id": 1004,
-          "wasc_id": 13
-        }
-      },
-      "Cookie without SameSite Attribute": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=fa12e7d7fb45beefa36ca6c1560ebf5a; path=/",
-          "cwe_id": 1275,
-          "wasc_id": 13
-        }
-      },
-      "Hash Disclosure": {
-        "https://testportal.helium.sh/": {
-          "evidence": "MD4 / MD5 found: fa12e7d7fb45beefa36ca6c1560ebf5a",
-          "cwe_id": 200,
-          "wasc_id": 13
-        }
-      },
-      "X-Content-Type-Options Header Missing": {
-        "https://testportal.helium.sh/": {
-          "cwe_id": 693,
-          "wasc_id": 15
-        }
-      },
-      "Server Leaks Information via \"X-Powered-By\" HTTP Response Header Field(s)": {
-        "https://testportal.helium.sh/": {
-          "evidence": "X-Powered-By: PHP/7.2.34",
-          "cwe_id": 200,
-          "wasc_id": 13
-        }
-      }
-    },
-    "medium": {
-      "Missing Anti-clickjacking Header": {
-        "https://testportal.helium.sh/": {
-          "cwe_id": 1021,
-          "wasc_id": 15
-        }
-      },
-      "Content Security Policy (CSP) Header Not Set": {
-        "https://testportal.helium.sh/": {
-          "cwe_id": 693,
-          "wasc_id": 15
-        }
-      },
-      "Absence of Anti-CSRF Tokens": {
-        "https://testportal.helium.sh/": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
-        }
-      }
-    },
+    "low": {},
+    "medium": {},
     "high": {}
   }
 }

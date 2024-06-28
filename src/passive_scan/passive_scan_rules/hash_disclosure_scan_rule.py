@@ -59,7 +59,7 @@ class HashDisclosureScanRule(BasePassiveScanRule):
                         for match in matches:
                             logger.debug(f"Found a match for hash type {desc}: {match}")
                             return Alert(risk_category=risk, 
-                                         confidence=confidence,
+                                        #  confidence=confidence,
                                          description="Hash Disclosure",
                                          evidence=f"{desc} found: {match}", 
                                          msg_ref="pscanrules.hashdisclosure",

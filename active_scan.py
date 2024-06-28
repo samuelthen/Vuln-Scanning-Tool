@@ -7,7 +7,7 @@ def main():
     param = "kategori"
 
     scan_rule = PathTraversalScanRule()
-    print(str(scan_rule.scan(url, param, method="POST")))
+    print(str(scan_rule.scan(url, param, method="GET")))
 
 
 if __name__ == "__main__":

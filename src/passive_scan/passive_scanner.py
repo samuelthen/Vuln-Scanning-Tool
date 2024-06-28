@@ -25,6 +25,20 @@ from src.passive_scan.passive_scan_rules.hash_disclosure_scan_rule import HashDi
 from src.passive_scan.passive_scan_rules.user_controlled_cookie_scan_rule import UserControlledCookieScanRule
 from src.passive_scan.passive_scan_rules.x_content_type_options_scan_rule import XContentTypeOptionsScanRule
 from src.passive_scan.passive_scan_rules.x_powered_by_header_info_leak_scan_rule import XPoweredByHeaderInfoLeakScanRule
+from src.passive_scan.passive_scan_rules.big_redirects_scan_rule import BigRedirectsScanRule
+from src.passive_scan.passive_scan_rules.cache_control_scan_rule import CacheControlScanRule
+from src.passive_scan.passive_scan_rules.content_type_missing_scan_rule import ContentTypeMissingScanRule
+from src.passive_scan.passive_scan_rules.cross_domain_misconfiguration_scan_rule import CrossDomainMisconfigurationScanRule
+from src.passive_scan.passive_scan_rules.directory_browsing_scan_rule import DirectoryBrowsingScanRule
+from src.passive_scan.passive_scan_rules.heart_bleed_scan_rule import HeartBleedScanRule
+from src.passive_scan.passive_scan_rules.insecure_authentication_scan_rule import InsecureAuthenticationScanRule
+from src.passive_scan.passive_scan_rules.insecure_jsf_view_state_passive_scan_rule import InsecureJsfViewStatePassiveScanRule
+from src.passive_scan.passive_scan_rules.mixed_content_scan_rule import MixedContentScanRule
+from src.passive_scan.passive_scan_rules.server_header_info_leak_scan_rule import ServerHeaderInfoLeakScanRule
+from src.passive_scan.passive_scan_rules.x_asp_net_version_scan_rule import XAspNetVersionScanRule
+from src.passive_scan.passive_scan_rules.x_backend_server_information_leak_scan_rule import XBackendServerInformationLeakScanRule
+from src.passive_scan.passive_scan_rules.x_chrome_logger_data_info_leak_scan_rule import XChromeLoggerDataInfoLeakScanRule
+from src.passive_scan.passive_scan_rules.x_debug_token_scan_rule import XDebugTokenScanRule
 
 logger = logging.getLogger(__name__)
 
@@ -39,26 +53,40 @@ class PassiveScanner:
         """
         self.scan_rules: List[BasePassiveScanRule] = []
 
-        self.scan_rules.append(AntiClickjackingScanRule())
-        self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
-        self.scan_rules.append(CrossDomainScriptInclusionScanRule())
-        self.scan_rules.append(StrictTransportSecurityScanRule())
-        self.scan_rules.append(ApplicationErrorScanRule())
-        self.scan_rules.append(CookieSecureFlagScanRule())
-        self.scan_rules.append(UserControlledHTMLAttributesScanRule())
-        self.scan_rules.append(UserControlledJavascriptEventScanRule())
-        self.scan_rules.append(InsecureFormLoadScanRule())
-        self.scan_rules.append(InsecureFormPostScanRule())
-        self.scan_rules.append(CookieHttpOnlyScanRule())
-        self.scan_rules.append(CsrfCountermeasuresScanRule())
-        self.scan_rules.append(InformationDisclosureInUrlScanRule())
-        self.scan_rules.append(InformationDisclosureReferrerScanRule())
-        self.scan_rules.append(CookieSameSiteScanRule())
-        self.scan_rules.append(CookieLooselyScopedScanRule())
-        self.scan_rules.append(HashDisclosureScanRule()) 
-        self.scan_rules.append(UserControlledCookieScanRule())
-        self.scan_rules.append(XContentTypeOptionsScanRule())
-        self.scan_rules.append(XPoweredByHeaderInfoLeakScanRule())
+        # self.scan_rules.append(AntiClickjackingScanRule())
+        # self.scan_rules.append(ContentSecurityPolicyMissingScanRule())
+        # self.scan_rules.append(CrossDomainScriptInclusionScanRule())
+        # self.scan_rules.append(StrictTransportSecurityScanRule())
+        # self.scan_rules.append(ApplicationErrorScanRule())
+        # self.scan_rules.append(CookieSecureFlagScanRule())
+        # self.scan_rules.append(UserControlledHTMLAttributesScanRule())
+        # self.scan_rules.append(UserControlledJavascriptEventScanRule())
+        # self.scan_rules.append(InsecureFormLoadScanRule())
+        # self.scan_rules.append(InsecureFormPostScanRule())
+        # self.scan_rules.append(CookieHttpOnlyScanRule())
+        # self.scan_rules.append(CsrfCountermeasuresScanRule())
+        # self.scan_rules.append(InformationDisclosureInUrlScanRule())
+        # self.scan_rules.append(InformationDisclosureReferrerScanRule())
+        # self.scan_rules.append(CookieSameSiteScanRule())
+        # self.scan_rules.append(CookieLooselyScopedScanRule())
+        # self.scan_rules.append(HashDisclosureScanRule()) 
+        # self.scan_rules.append(UserControlledCookieScanRule())
+        # self.scan_rules.append(XContentTypeOptionsScanRule())
+        # self.scan_rules.append(XPoweredByHeaderInfoLeakScanRule())
+        # self.scan_rules.append(BigRedirectsScanRule())
+        # self.scan_rules.append(CacheControlScanRule())
+        # self.scan_rules.append(ContentTypeMissingScanRule())
+        # self.scan_rules.append(CrossDomainMisconfigurationScanRule())
+        # self.scan_rules.append(DirectoryBrowsingScanRule())
+        # self.scan_rules.append(HeartBleedScanRule())
+        # self.scan_rules.append(InsecureAuthenticationScanRule())
+        # self.scan_rules.append(InsecureJsfViewStatePassiveScanRule()) #Error
+        # self.scan_rules.append(MixedContentScanRule()) #Error
+        # self.scan_rules.append(ServerHeaderInfoLeakScanRule())
+        self.scan_rules.append(XAspNetVersionScanRule())
+        self.scan_rules.append(XBackendServerInformationLeakScanRule()) 
+        self.scan_rules.append(XChromeLoggerDataInfoLeakScanRule())
+        self.scan_rules.append(XDebugTokenScanRule())
 
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:
@@ -70,7 +98,7 @@ class PassiveScanner:
             try:
                 result = scan_rule.check_risk(request, response)
                 results[str(scan_rule)] = result
-                # print(str(result))
+                print(str(result))
             except Exception as e:
                 
                 logger.error(e)

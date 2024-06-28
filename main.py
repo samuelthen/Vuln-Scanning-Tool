@@ -44,6 +44,8 @@ if __name__ == '__main__':
             results = scanner.run_scan(request, response).values()
             
             for result in results:
+                print(access_nested_dict(messages, result.msg_ref + ".name"))
+                
                 if result.risk_category == "informational":
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
                     if msg not in ps_results[result.risk_category]:

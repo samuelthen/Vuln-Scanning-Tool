@@ -1,10 +1,13 @@
+import logging.config
 import re
 import logging
 import requests
 from urllib.parse import urlparse, urlencode, urlunparse, parse_qs
+from requests.models import Request, Response
 from src.passive_scan.passive_scan_rules.utils.alert import Alert
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.WARNING)
 
 class PathTraversalScanRule:
     VALID_ATTACK_STRENGTH = {"LOW", "MEDIUM", "HIGH", "INSANE"}
@@ -192,7 +195,7 @@ class PathTraversalScanRule:
                     return
     
     def send_and_check_payload(self, base_url, param, new_value, pattern, check, method):
-        msg = self.get_new_msg(base_url, method)
+        msg:Request = self.get_new_msg(base_url, method)
         self.set_parameter(msg, param, new_value)
         
         logger.debug(f"Checking parameter [{param}] for Path Traversal (local file) with value [{new_value}]")
@@ -213,14 +216,14 @@ class PathTraversalScanRule:
     def get_new_msg(self, base_url, method):
         return requests.Request(method, base_url)
     
-    def send_and_receive(self, msg):
+    def send_and_receive(self, msg: Request):
         prepared = msg.prepare()
         with requests.Session() as session:
             response = session.send(prepared)
             msg.response = response
         return response
     
-    def set_parameter(self, msg, param, value):
+    def set_parameter(self, msg: Request, param, value):
         if msg.method.upper() == 'GET':
             url_parts = list(urlparse(msg.url))
             query = dict(parse_qs(url_parts[4]))
