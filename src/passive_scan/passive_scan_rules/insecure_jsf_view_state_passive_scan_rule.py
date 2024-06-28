@@ -1,9 +1,12 @@
 import logging
+import base64
+import zlib
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
-import base64
-import zlib
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +14,15 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for insecure JSF ViewState.
     """
+
+    MSG_REF = "pscanrules.insecurejsfviewstate"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A04_INSECURE_DESIGN,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG
+    ]
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -27,19 +39,21 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
             if response.content and response.headers.get("Content-Type", "").startswith("text/html"):
                 source_elements = self.extract_input_elements(response.text)
                 for element in source_elements:
-                    if "javax.faces.ViewState" in element.get("id", "").lower():
+                    element_id = element.get("id", "")
+                    if element_id and "javax.faces.ViewState" in element_id.lower():
                         view_state = element.get("value")
                         if view_state and not view_state.startswith("_") and not self.is_view_state_stored_on_server(view_state):
                             if not self.is_view_state_secure(view_state):
-                                return Alert(risk_category="Medium", 
+                                return Alert(risk_category=Risk.RISK_MEDIUM,
+                                             confidence=Confidence.CONFIDENCE_LOW, 
                                              description="Insecure JSF ViewState detected",
-                                             msg_ref="pscanrules.insecurejsfviewstate.detected",
+                                             msg_ref=self.MSG_REF,
                                              cwe_id=self.get_cwe_id(), 
                                              wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e),msg_ref=self.MSG_REF)
 
     def extract_input_elements(self, html):
         """

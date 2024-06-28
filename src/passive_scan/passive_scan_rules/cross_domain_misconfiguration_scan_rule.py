@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,15 @@ class CrossDomainMisconfigurationScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for cross-domain misconfigurations in HTTP responses.
     """
+
+    MSG_REF = "pscanrules.crossdomain"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A05_BROKEN_AC
+    ]
     
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -30,19 +42,20 @@ class CrossDomainMisconfigurationScanRule(BasePassiveScanRule):
                 logger.debug(f"Raising a Medium risk Cross Domain alert on Access-Control-Allow-Origin: {cors_allow_origin_value}")
                 
                 return Alert(
-                    risk_category="Medium",
+                    risk_category=self.RISK,
+                    confidence=self.CONFIDENCE,
                     description=self.get_description(),
-                    msg_ref="pscanrules.crossdomain.alloworigin",
+                    msg_ref=self.MSG_REF,
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id(),
                     evidence=self.extract_evidence(response.headers, "Access-Control-Allow-Origin", cors_allow_origin_value)
                 )
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         
         except Exception as e:
             logger.error(f"An error occurred trying to passively scan a message for Cross Domain Misconfigurations: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
         
     def extract_evidence(self, headers, header_name, header_contents) -> str:
         """

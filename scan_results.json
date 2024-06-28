@@ -9,7 +9,15 @@
   },
   "passive_vulnerabilities": {
     "informational": {},
-    "low": {},
+    "low": {
+      "Server Leaks Version Information via \"Server\" HTTP Response Header Field": {
+        "https://testportal.helium.sh/": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        }
+      }
+    },
     "medium": {},
     "high": {}
   }

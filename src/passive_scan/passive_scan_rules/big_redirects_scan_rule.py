@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,10 +13,12 @@ class BigRedirectsScanRule(BasePassiveScanRule):
     """
     Passive scan rule to detect big redirects and multiple href attributes in redirects.
     """
+    MSG_REF = "pscanrules.bigredirects"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
 
     HREF_PATTERN = re.compile(r'href', re.IGNORECASE)
     PLUGIN_ID = 10044
-    MESSAGE_PREFIX = "pscanrules.bigredirects."
     
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -86,9 +91,10 @@ class BigRedirectsScanRule(BasePassiveScanRule):
             Alert: The created alert object.
         """
         return Alert(
-            risk_category="Medium",
+            risk_category=self.RISK,
+            confidence=self.CONFIDENCE,
             description="Big redirect detected",
-            msg_ref=f"{self.MESSAGE_PREFIX}big.redirect",
+            msg_ref=self.MSG_REF,
             cwe_id=self.get_cwe_id(),
             wasc_id=self.get_wasc_id(),
             other_info=f"URL Length: {url_length}, URL: {url}, Predicted Max Length: {predicted_max_length}, Actual Max Length: {actual_max_length}"
@@ -105,9 +111,10 @@ class BigRedirectsScanRule(BasePassiveScanRule):
             Alert: The created alert object.
         """
         return Alert(
-            risk_category="Medium",
+            risk_category=self.RISK,
+            confidence=self.CONFIDENCE,
             description="Multiple href attributes detected in redirect",
-            msg_ref=f"{self.MESSAGE_PREFIX}multi.href",
+            msg_ref=f"{self.MSG_REF}.multi",
             cwe_id=self.get_cwe_id(),
             wasc_id=self.get_wasc_id(),
             other_info=f"Number of href attributes: {href_count}"

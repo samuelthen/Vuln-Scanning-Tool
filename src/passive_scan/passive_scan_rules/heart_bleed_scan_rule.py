@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,17 @@ class HeartBleedScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for vulnerable OpenSSL versions indicating the HeartBleed vulnerability.
     """
+
+    MSG_REF = "pscanrules.heartbleed"
+    RISK = Risk.RISK_HIGH
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A06_VULN_COMP,
+        CommonAlertTag.OWASP_2017_A09_VULN_COMP,
+        CommonAlertTag.WSTG_V42_CRYP_01_TLS
+    ]
+
     # Pattern to identify the OpenSSL version in the response headers
     openSSLversionPattern = re.compile(r'Server:.*?(OpenSSL/([0-9.]+[a-z-0-9]+))', re.IGNORECASE)
     
@@ -51,19 +65,20 @@ class HeartBleedScanRule(BasePassiveScanRule):
                 # Check if the version matches any known vulnerable versions
                 if version_number in self.openSSLvulnerableVersions:
                     return Alert(
-                        risk_category="High",
+                        risk_category=self.RISK,
+                        confidence=self.CONFIDENCE,
                         description="OpenSSL version is vulnerable to HeartBleed",
-                        msg_ref="pscanrules.heartbleed",
+                        msg_ref=self.MSG_REF,
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id(),
                         evidence=full_version_string
                     )
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
         
     def __str__(self) -> str:
         """

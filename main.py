@@ -4,6 +4,7 @@ import requests
 import json
 from requests.models import Request, Response
 from src.spider.web_spider import WebSpider
+from src.passive_scan.passive_scan_rules.utils.risk import Risk
 from src.passive_scan.passive_scanner import PassiveScanner
 
 logger = logging.getLogger(__name__)
@@ -40,18 +41,22 @@ if __name__ == '__main__':
             response = requests.get(url)
             # print(response.text)
 
-            report_levels = ["high", "medium", "low"]
+            # report_levels = ["high", "medium", "low"]
+            report_levels = [Risk.RISK_HIGH, Risk.RISK_MEDIUM, Risk.RISK_LOW]
             results = scanner.run_scan(request, response).values()
             
             for result in results:
-                print(access_nested_dict(messages, result.msg_ref + ".name"))
+                # print(access_nested_dict(messages, result.msg_ref + ".name"))
                 
-                if result.risk_category == "informational":
+                risk_level = result.risk_category.value[1].lower()
+                # print(risk_level)
+
+                if result.risk_category == Risk.RISK_INFO:
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
                     if msg not in ps_results[result.risk_category]:
-                        ps_results[result.risk_category][msg] = [url]
+                        ps_results[risk_level][msg] = [url]
                     else:
-                        ps_results[result.risk_category][msg].append(url)
+                        ps_results[risk_level][msg].append(url)
                 
                 elif result.risk_category in report_levels:
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
@@ -63,10 +68,10 @@ if __name__ == '__main__':
                     if result.wasc_id is not None:
                         output["wasc_id"] = result.wasc_id    
 
-                    if msg not in ps_results[result.risk_category]:
-                        ps_results[result.risk_category][msg] = {url: output}
+                    if msg not in ps_results[risk_level]:
+                        ps_results[risk_level][msg] = {url: output}
                     else:
-                        ps_results[result.risk_category][msg][url] = output
+                        ps_results[risk_level][msg][url] = output
 
         except Exception as e:
             logger.error(e)

@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,14 @@ class DirectoryBrowsingScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for directory browsing/listing enabled.
     """
+    MSG_REF = "pscanrules.directorybrowsing"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG
+    ]
 
     # Predefined patterns for detecting directory browsing in response body
     server_patterns = {
@@ -37,17 +48,18 @@ class DirectoryBrowsingScanRule(BasePassiveScanRule):
                 for pattern, server in self.server_patterns.items():
                     if pattern.search(response_body):
                         evidence = pattern.search(response_body).group()
-                        return Alert(risk_category="Medium",
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE,
                                      description=f"Directory browsing enabled on {server} server.",
-                                     msg_ref="pscanrules.directorybrowsing.detected",
+                                     msg_ref=self.MSG_REF,
                                      evidence=evidence,
                                      cwe_id=self.get_cwe_id(),
                                      wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def __str__(self) -> str:
         """

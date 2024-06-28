@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,14 @@ class MixedContentScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for mixed content in HTTPS responses.
     """
+    
+    MSG_REF = "pscanrules.mixedcontent"
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG,
+        CommonAlertTag.WSTG_V42_CRYP_03_CRYPTO_FAIL
+    ]
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -41,20 +52,18 @@ class MixedContentScanRule(BasePassiveScanRule):
                         self.add_atts_containing_http_content(element, "icon", mixed_content)
                         self.add_atts_containing_http_content(element, "usemap", mixed_content)
                         
-                        # Additional checks for low and medium alert thresholds
-                        if self.get_alert_threshold() in ["LOW", "MEDIUM"]:
-                            self.add_atts_containing_http_content(element, "action", mixed_content)
-                            self.add_atts_containing_http_content(element, "formaction", mixed_content)
+                        self.add_atts_containing_http_content(element, "action", mixed_content)
+                        self.add_atts_containing_http_content(element, "formaction", mixed_content)
 
                     if mixed_content:
                         details = "\n".join([f"tag={mc['tag']} {mc['att']}={mc['value']}" for mc in mixed_content])
                         return self.build_alert(mixed_content[0]['value'], details, inc_script)
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def add_atts_containing_http_content(self, element, attribute, mixed_content):
         """
@@ -86,13 +95,14 @@ class MixedContentScanRule(BasePassiveScanRule):
         Returns:
             Alert: The constructed Alert object.
         """
-        risk = "Low"
+        risk = Risk.RISK_LOW
         if inc_script:
-            risk = "Medium"
+            risk = Risk.RISK_MEDIUM
         return Alert(
             risk_category=risk,
+            confidence=Confidence.CONFIDENCE_MEDIUM,
             description="Mixed content detected in HTTPS page.",
-            msg_ref="pscanrules.mixedcontent.detected",
+            msg_ref=self.MSG_REF,
             cwe_id=self.get_cwe_id(),
             wasc_id=self.get_wasc_id(),
             details=all_details,

@@ -4,6 +4,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +14,18 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for insecure authentication mechanisms.
     """
+    
+    MSG_REF = "pscanrules.insecureauthentication"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2021_A02_CRYPTO_FAIL,
+        CommonAlertTag.OWASP_2017_A02_BROKEN_AUTH,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED,
+        CommonAlertTag.WSTG_V42_ATHN_01_CREDS_NO_CRYPTO
+    ]
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -25,7 +40,7 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
         """
         try:
             if request.url.startswith("https"):
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             auth_headers = request.headers.get("Authorization", "")
             if auth_headers:
@@ -37,10 +52,10 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
                     elif auth_mechanism == "digest":
                         return self.handle_digest_auth(auth_header_value)
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def handle_basic_auth(self, auth_header_value):
         try:
@@ -50,19 +65,20 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
                 decoded = base64.b64decode(encoded_credentials).decode('utf-8')
                 username, password = decoded.split(":", 1) if ":" in decoded else (decoded, None)
                 return Alert(
-                    risk_category="High" if password else "Medium",
+                    risk_category=Risk.RISK_HIGH if password else self.RISK,
+                    confidence=Confidence.CONFIDENCE_MEDIUM,
                     description="Insecure Basic Authentication detected",
-                    msg_ref="pscanrules.insecureauthentication.basic",
+                    msg_ref=self.MSG_REF,
                     extra_info=f"Username: {username}, Password: {password}",
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()
                 )
             else:
                 logger.debug(f"Malformed Basic Authentication Header: {auth_header_value}")
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logger.error(f"Invalid Base64 value for Basic Authentication: {auth_header_value}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def handle_digest_auth(self, auth_header_value):
         try:
@@ -70,19 +86,20 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
             if username_match:
                 username = username_match.group(1)
                 return Alert(
-                    risk_category="Medium",
+                    risk_category=self.RISK,
+                    confidence=Confidence.CONFIDENCE_MEDIUM,
                     description="Insecure Digest Authentication detected",
-                    msg_ref="pscanrules.insecureauthentication.digest",
+                    msg_ref=self.MSG_REF,
                     extra_info=f"Username: {username}, Auth Header: {auth_header_value}",
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()
                 )
             else:
                 logger.debug(f"Malformed Digest Authentication Header: {auth_header_value}")
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logger.error(f"Error processing Digest Authentication: {auth_header_value}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def __str__(self) -> str:
         """

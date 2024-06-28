@@ -4,6 +4,7 @@ from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
 from .utils.risk import Risk
 from .utils.confidence import Confidence
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,14 @@ class XDebugTokenScanRule(BasePassiveScanRule):
     """
 
     MSG_REF = "pscanrules.xdebugtoken"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_HIGH
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED,
+        CommonAlertTag.WSTG_V42_ERRH_01_ERR
+    ]
 
     X_DEBUG_TOKEN_HEADER = "X-Debug-Token"
     X_DEBUG_TOKEN_LINK_HEADER = "X-Debug-Token-Link"
@@ -55,9 +64,9 @@ class XDebugTokenScanRule(BasePassiveScanRule):
             Alert: An Alert object.
         """
         return Alert(
-            risk_category=Risk.RISK_LOW,
+            risk_category=self.RISK,
             description="X-Debug-Token Information Leak",
-            confidence=Confidence.CONFIDENCE_HIGH,
+            confidence=self.CONFIDENCE,
             msg_ref=self.MSG_REF,
             evidence=evidence,
             cwe_id=self.get_cwe_id(),

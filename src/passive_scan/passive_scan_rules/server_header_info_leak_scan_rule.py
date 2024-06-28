@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,13 @@ class ServerHeaderInfoLeakScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for server header version information leaks.
     """
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG,
+        CommonAlertTag.WSTG_V42_INFO_02_FINGERPRINT_WEB_SERVER
+    ]
+
     VERSION_PATTERN = re.compile(r".*\d.*")
 
     def check_risk(self, request: Request, response: Response) -> Alert:
@@ -30,26 +40,28 @@ class ServerHeaderInfoLeakScanRule(BasePassiveScanRule):
                     server_header = server_header.strip()
                     if self.VERSION_PATTERN.match(server_header):
                         return Alert(
-                            risk_category="Low", 
+                            risk_category=Risk.RISK_LOW, 
+                            confidence=Confidence.CONFIDENCE_HIGH,
                             description="Server version information leak",
                             msg_ref="pscanrules.serverheaderversioninfoleak",
                             cwe_id=self.get_cwe_id(), 
                             wasc_id=self.get_wasc_id(),
                             evidence=server_header
                         )
-                    elif self.get_alert_threshold() == "Low":
+                    else:
                         return Alert(
-                            risk_category="Informational", 
+                            risk_category=Risk.RISK_INFO, 
+                            confidence=Confidence.CONFIDENCE_HIGH,
                             description="Server header present",
-                            msg_ref="pscanrules.serverheaderversioninfoleak",
+                            msg_ref="pscanrules.serverheaderinfoleak",
                             cwe_id=self.get_cwe_id(), 
                             wasc_id=self.get_wasc_id(),
                             evidence=server_header
                         )
-            return NoAlert()
+            return NoAlert(msg_ref="pscanrules.serverheaderinfoleak")
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref="pscanrules.serverheaderinfoleak")
 
     def __str__(self) -> str:
         """

@@ -1,8 +1,11 @@
 import logging
+import base64
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
-import base64
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +14,15 @@ class XChromeLoggerDataInfoLeakScanRule(BasePassiveScanRule):
     Passive scan rule to check for X-ChromeLogger-Data or X-ChromePhp-Data headers.
     """
     MSG_REF = "pscanrules.xchromeloggerdata"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_HIGH
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A04_INSECURE_DESIGN,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED,
+        CommonAlertTag.WSTG_V42_INFO_05_CONTENT_LEAK
+    ]
+
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for X-ChromeLogger-Data or X-ChromePhp-Data headers in the HTTP response.
@@ -37,11 +49,11 @@ class XChromeLoggerDataInfoLeakScanRule(BasePassiveScanRule):
                 for header_value in logger_headers:
                     return self.create_alert(header_value)
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def create_alert(self, header_value: str) -> Alert:
         """
@@ -60,7 +72,8 @@ class XChromeLoggerDataInfoLeakScanRule(BasePassiveScanRule):
             other_info = f"Failed to decode header value: {header_value} ({str(e)})"
 
         return Alert(
-            risk_category="Medium",
+            risk_category=self.RISK,
+            confidence=self.CONFIDENCE,
             description="X-ChromeLogger-Data or X-ChromePhp-Data header detected, possible information leak",
             msg_ref=self.MSG_REF,
             cwe_id=self.get_cwe_id(),

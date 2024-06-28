@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,15 @@ class ContentTypeMissingScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for missing or empty Content-Type headers.
     """
+    MSG_REF = "pscanrules.contenttypemissing"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG
+    ]
+
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for missing or empty Content-Type headers in the HTTP response.
@@ -27,23 +39,25 @@ class ContentTypeMissingScanRule(BasePassiveScanRule):
                 content_type = response.headers.get("Content-Type", None)
                 if content_type is None:
                     # Content-Type header is missing
-                    return Alert(risk_category="Low",
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE,
                                  description="Content-Type header is missing",
-                                 msg_ref="pscanrules.contenttypemissing.missing",
+                                 msg_ref=self.MSG_REF,
                                  cwe_id=self.get_cwe_id(),
                                  wasc_id=self.get_wasc_id())
                 elif not content_type.strip():
                     # Content-Type header is empty
-                    return Alert(risk_category="Low",
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE,
                                  description="Content-Type header is empty",
-                                 msg_ref="pscanrules.contenttypemissing.empty",
+                                 msg_ref=self.MSG_REF,
                                  cwe_id=self.get_cwe_id(),
                                  wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e),msg_ref=self.MSG_REF)
         
     def __str__(self) -> str:
         """

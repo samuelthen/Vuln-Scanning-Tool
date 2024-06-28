@@ -1,5 +1,5 @@
-from risk import Risk
-from confidence import Confidence
+from .risk import Risk
+from .confidence import Confidence
 
 class Alert:
     """
