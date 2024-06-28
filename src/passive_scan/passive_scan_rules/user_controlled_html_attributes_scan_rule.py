@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +14,14 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for user-controlled HTML attributes.
     """
+    MSG_REF = "pscanrules.usercontrolledhtmlattributes"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A03_INJECTION,
+        CommonAlertTag.OWASP_2017_A01_INJECTION
+    ]
     
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -40,20 +51,21 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
                                                f"Attribute: {attr}\n" \
                                                f"Attribute Value: {value}\n" \
                                                f"Parameter: {param}"
-                                    return Alert(risk_category="Informational",
+                                    return Alert(risk_category=self.RISK,
+                                                 confidence=self.CONFIDENCE,
                                                  description="User-controlled HTML attribute detected.",
-                                                 msg_ref="pscanrules.usercontrolledhtmlattributes",
+                                                 msg_ref=self.MSG_REF,
                                                  evidence=evidence,
                                                  cwe_id=self.get_cwe_id(),
                                                  wasc_id=self.get_wasc_id())
                 
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
     
     def get_parameters(self, url: str) -> set:
         """

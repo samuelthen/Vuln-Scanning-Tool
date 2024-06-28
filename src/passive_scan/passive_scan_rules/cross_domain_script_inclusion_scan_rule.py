@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +14,13 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for cross-domain script inclusions without the integrity attribute.
     """
+    MSG_REF = "pscanrules.crossdomainscriptinclusion"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A08_INTEGRITY_FAIL
+    ]
     
     def is_script_from_other_domain(self, request_host, script_url):
         """
@@ -72,20 +82,21 @@ class CrossDomainScriptInclusionScanRule(BasePassiveScanRule):
                             evidence.append(str(script))
                 
                 if risk_flag:
-                    return Alert(risk_category="Low", 
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE, 
                                  description="Cross Domain Script Inclusion detected without integrity attribute)",
-                                 msg_ref="pscanrules.crossdomainscriptinclusion",
+                                 msg_ref=self.MSG_REF,
                                  evidence=evidence,
                                  cwe_id=self.get_cwe_id(),
                                  wasc_id=self.get_wasc_id())
                 else:
-                    return NoAlert()
+                    return NoAlert(msg_ref=self.MSG_REF)
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
         
     def __str__(self) -> str:
         """

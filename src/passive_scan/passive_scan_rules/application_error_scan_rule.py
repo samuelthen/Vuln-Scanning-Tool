@@ -3,6 +3,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,16 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for application error messages in HTTP responses.
     """
+    MSG_REF = "pscanrules.applicationerrors"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG,
+        CommonAlertTag.WSTG_V42_ERRH_01_ERR,
+        CommonAlertTag.WSTG_V42_ERRH_02_STACK
+    ]
 
     # Path to the XML file containing error patterns
     APP_ERRORS_FILE = 'src/passive_scan/passive_scan_rules/utils/application_errors.xml'
@@ -93,28 +106,30 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             # Skip non-HTML or non-plaintext responses
             content_type = response.headers.get('Content-Type', '')
             if 'text/html' not in content_type and 'text/plain' not in content_type:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             body = response.text
 
             # Check for INTERNAL SERVER ERROR
             if response.status_code == 500:
-                return Alert(risk_category="Low", 
+                return Alert(risk_category=self.RISK,
+                             confidence=self.CONFIDENCE, 
                              description="Internal Server Error detected",
-                             msg_ref="pscanrules.applicationerrors",
+                             msg_ref=self.MSG_REF,
                              cwe_id=self.get_cwe_id(),
                              wasc_id=self.get_wasc_id())
 
             # Skip 404 and wasm responses
             if response.status_code == 404 or 'application/wasm' in content_type:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             # Check for custom payloads
             for payload in self.payload_provider():
                 if payload in body:
-                    return Alert(risk_category="Medium", 
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE, 
                                  description="Custom application error detected",
-                                 msg_ref="pscanrules.applicationerrors",
+                                 msg_ref=self.MSG_REF,
                                  evidence=payload,
                                  cwe_id=self.get_cwe_id(), 
                                  wasc_id=self.get_wasc_id())
@@ -122,17 +137,18 @@ class ApplicationErrorScanRule(BasePassiveScanRule):
             # Check for patterns in content
             evidence = self.matcher.find_in_content(body)
             if evidence:
-                return Alert(risk_category="Medium",
+                return Alert(risk_category=self.RISK,
+                             confidence=self.CONFIDENCE,
                              description="Application error pattern detected",
-                             msg_ref="pscanrules.applicationerrors",
+                             msg_ref=self.MSG_REF,
                              evidence=evidence,
                              cwe_id=self.get_cwe_id(),
                              wasc_id=self.get_wasc_id())
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def __str__(self) -> str:
         """

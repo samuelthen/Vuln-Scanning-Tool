@@ -17,6 +17,12 @@ class BigRedirectsScanRule(BasePassiveScanRule):
     RISK = Risk.RISK_LOW
     CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
 
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A04_INSECURE_DESIGN,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED,
+        CommonAlertTag.WSTG_V42_INFO_05_CONTENT_LEAK
+    ]
+
     HREF_PATTERN = re.compile(r'href', re.IGNORECASE)
     PLUGIN_ID = 10044
     
@@ -39,7 +45,7 @@ class BigRedirectsScanRule(BasePassiveScanRule):
                     response_location_header_uri_length = len(location_header)
                 else:
                     logger.debug("Redirect status code with no Location header.\nRequested URL: %s", request.url)
-                    return NoAlert()
+                    return NoAlert(msg_ref=self.MSG_REF)
                 
                 predicted_response_size = self.get_predicted_response_size(response_location_header_uri_length)
                 response_body_length = len(response.text)
@@ -56,11 +62,11 @@ class BigRedirectsScanRule(BasePassiveScanRule):
                     if href_count > 1:
                         return self.create_multi_alert(href_count)
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
         
     def get_predicted_response_size(self, redirect_uri_length: int) -> int:
         """

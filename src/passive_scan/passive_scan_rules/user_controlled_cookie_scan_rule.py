@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,10 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for user-controlled cookies.
     """
+    MSG_REF = "pscanrules.usercontrolledcookie"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for user-controlled cookies in the HTTP response.
@@ -23,11 +30,11 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
         try:
             cookies = response.headers.get('Set-Cookie')
             if not cookies:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             params = self.get_request_params(request)
             if not params:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             for cookie in cookies.split(';'):
                 decoded_cookie = self.decode_cookie(cookie, response.encoding)
@@ -39,10 +46,10 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
                     alert = self.check_user_controllable_cookie_header_value(request, response, params, cookie_part, decoded_cookie)
                     if alert:
                         return alert
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def decode_cookie(self, cookie: str, charset: str) -> str:
         """
@@ -77,9 +84,10 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
         for param_name, param_value in params.items():
             if param_value and len(param_value) > 1 and param_value == cookie_part:
                 return Alert(
-                    risk_category="Info",
+                    risk_category=self.RISK,
+                    confidence=self.CONFIDENCE,
                     description="User-controlled cookie detected",
-                    msg_ref="pscanrules.usercontrolledcookie",
+                    msg_ref=self.MSG_REF,
                     evidence=cookie,
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()

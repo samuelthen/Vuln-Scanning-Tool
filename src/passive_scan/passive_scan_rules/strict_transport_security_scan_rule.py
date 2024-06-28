@@ -3,11 +3,22 @@ from requests.models import Request, Response
 from urllib.parse import urlparse
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 class StrictTransportSecurityScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for Strict-Transport-Security headers and their correct configuration.
     """
+    MSG_REF = "pscanrules.stricttransportsecurity"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_HIGH
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A05_SEC_MISCONFIG,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG
+    ]
 
     STS_HEADER = "Strict-Transport-Security"
     BAD_MAX_AGE_PATT = re.compile(r"\bmax-age\s*=\s*\'*\"*\s*0\s*\"*\'*\s*", re.IGNORECASE)
@@ -46,14 +57,16 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                                 # Ignore, so report the missing header
                                 print(f"Error parsing URLs: {e}")
                     if report:
-                        return Alert(risk_category="Low", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Strict-Transport-Security header missing",
                                      msg_ref="pscanrules.stricttransportsecurity",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
                 
                 elif len(response.headers.get(self.STS_HEADER, '').split(',')) > 1:
-                    return Alert(risk_category="Low", 
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.RISK, 
                                  description="Multiple Strict-Transport-Security headers found",
                                  msg_ref="pscanrules.stricttransportsecurity.compliance.multiple.header",
                                  cwe_id=self.get_cwe_id(), 
@@ -61,32 +74,37 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                 else:
                     sts_option_string = sts_headers.lower()
                     if not self.WELL_FORMED_PATT.match(sts_option_string):
-                        return Alert(risk_category="Low", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Malformed Strict-Transport-Security header content",
                                      msg_ref="pscanrules.stricttransportsecurity.compliance.malformed.content",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
                     if self.BAD_MAX_AGE_PATT.search(sts_option_string):
-                        return Alert(risk_category="Low", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Strict-Transport-Security header with max-age=0",
                                      msg_ref="pscanrules.stricttransportsecurity.max.age",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())
                     if not self.MAX_AGE_PATT.search(sts_option_string):
-                        return Alert(risk_category="Low", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Strict-Transport-Security header missing max-age",
                                      msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.missing",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())                    
                     if self.MALFORMED_MAX_AGE.search(sts_option_string):
-                        return Alert(risk_category="Low", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Malformed max-age in Strict-Transport-Security header",
                                      msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.malformed",
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id())   
 
                 if meta_hsts:
-                    return Alert(risk_category="Low", 
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE, 
                                  description="Strict-Transport-Security set via META tag",
                                  msg_ref="pscanrules.stricttransportsecurity.compliance.meta",
                                  cwe_id=self.get_cwe_id(), 
@@ -95,17 +113,18 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
             else:
                 # Check for STS headers in non-HTTPS responses at low threshold
                 if response.headers.get(self.STS_HEADER, None):
-                    return Alert(risk_category="Informational", 
+                    return Alert(risk_category=Risk.RISK_INFO,
+                                 confidence=self.CONFIDENCE, 
                                  description="Strict-Transport-Security header present on non-HTTPS response",
                                  msg_ref="pscanrules.stricttransportsecurity.plain.resp",
                                  cwe_id=self.get_cwe_id(), 
                                  wasc_id=self.get_wasc_id())   
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def get_meta_hsts_evidence(self, response: Response) -> str:
         """

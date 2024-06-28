@@ -10,10 +10,10 @@
   "passive_vulnerabilities": {
     "informational": {},
     "low": {
-      "Server Leaks Version Information via \"Server\" HTTP Response Header Field": {
+      "Cookie Without Secure Flag": {
         "https://testportal.helium.sh/": {
-          "evidence": "nginx/1.18.0 (Ubuntu)",
-          "cwe_id": 200,
+          "evidence": "PHPSESSID=0ef9027e30e192665125a3bd5ed906f7; path=/",
+          "cwe_id": 614,
           "wasc_id": 13
         }
       }

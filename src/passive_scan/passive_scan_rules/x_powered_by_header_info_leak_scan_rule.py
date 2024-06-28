@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,16 @@ class XPoweredByHeaderInfoLeakScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for X-Powered-By information leak in HTTP headers.
     """
+    MSG_REF = "pscanrules.xpoweredbyheaderinfoleak"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED,
+        CommonAlertTag.WSTG_V42_INFO_08_FINGERPRINT_APP_FRAMEWORK
+    ]
+
     HEADER_NAME = "X-Powered-By"
 
     def check_risk(self, request: Request, response: Response) -> Alert:
@@ -29,17 +42,18 @@ class XPoweredByHeaderInfoLeakScanRule(BasePassiveScanRule):
                 alert_other_info = ""
                 if len(xpb_headers) > 1:  # Multiple X-Powered-By headers found
                     alert_other_info = "\n".join(xpb_headers[1:])
-                return Alert(risk_category="Low",
+                return Alert(risk_category=self.RISK,
+                             confidence=self.CONFIDENCE,
                              description="X-Powered-By header information leak",
-                             msg_ref="pscanrules.xpoweredbyheaderinfoleak",
+                             msg_ref=self.MSG_REF,
                              evidence=alert_evidence,
                              cwe_id=self.get_cwe_id(),
                              wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
     
     def get_x_powered_by_headers(self, response: Response) -> list:
         """
