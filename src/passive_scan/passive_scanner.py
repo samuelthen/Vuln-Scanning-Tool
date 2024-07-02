@@ -39,6 +39,7 @@ from .passive_scan_rules.x_asp_net_version_scan_rule import XAspNetVersionScanRu
 from .passive_scan_rules.x_backend_server_information_leak_scan_rule import XBackendServerInformationLeakScanRule
 from .passive_scan_rules.x_chrome_logger_data_info_leak_scan_rule import XChromeLoggerDataInfoLeakScanRule
 from .passive_scan_rules.x_debug_token_scan_rule import XDebugTokenScanRule
+from .passive_scan_rules.content_security_policy_scan_rule import ContentSecurityPolicyScanRule
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,6 @@ class PassiveScanner:
         # self.scan_rules.append(CookieSecureFlagScanRule())
         # self.scan_rules.append(UserControlledHTMLAttributesScanRule())
         # self.scan_rules.append(UserControlledJavascriptEventScanRule())
-
         # self.scan_rules.append(InsecureFormLoadScanRule())
         # self.scan_rules.append(InsecureFormPostScanRule())
         # self.scan_rules.append(CookieHttpOnlyScanRule())
@@ -71,7 +71,6 @@ class PassiveScanner:
         # self.scan_rules.append(CookieSameSiteScanRule())
         # self.scan_rules.append(CookieLooselyScopedScanRule())
         # self.scan_rules.append(HashDisclosureScanRule()) 
-        
         # self.scan_rules.append(UserControlledCookieScanRule())
         # self.scan_rules.append(XContentTypeOptionsScanRule())
         # self.scan_rules.append(XPoweredByHeaderInfoLeakScanRule())
@@ -89,7 +88,7 @@ class PassiveScanner:
         # self.scan_rules.append(XBackendServerInformationLeakScanRule()) 
         # self.scan_rules.append(XChromeLoggerDataInfoLeakScanRule())
         # self.scan_rules.append(XDebugTokenScanRule())
-
+        self.scan_rules.append(ContentSecurityPolicyScanRule())
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:
         """Run the vulnerability scan."""

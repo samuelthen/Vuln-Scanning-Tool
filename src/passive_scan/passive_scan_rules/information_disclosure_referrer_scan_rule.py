@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +13,14 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for information disclosure in HTTP Referrer headers.
     """
-    
+    MSG_REF = "pscanrules.informationdisclosurereferrer"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED
+    ]    
     # Regular expressions for detecting sensitive information patterns
     EMAIL_PATTERN = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b")
     CREDIT_CARD_PATTERN = re.compile(
@@ -64,7 +74,7 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
         try:
             referrer_headers = request.headers.get('Referer', [])
             if not referrer_headers:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
             
             for referrer in referrer_headers:
                 # Check if the referrer is from a different domain
@@ -73,9 +83,10 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                     sensitive_info = self.contains_sensitive_information(referrer)
                     if sensitive_info:
                         return Alert(
-                            risk_category="Informational",
+                            risk_category=self.RISK,
+                            confidence=self.CONFIDENCE,
+                            msg_ref=self.MSG_REF,
                             description=f"Sensitive information found in Referrer header: {sensitive_info}",
-                            msg_ref="pscanrules.informationdisclosurereferrer",
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
@@ -86,35 +97,38 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                         if bin_record:
                             description += f" with BIN record: {bin_record}"
                         return Alert(
-                            risk_category="Informational",
+                            risk_category=self.RISK,
+                            confidence=self.CONFIDENCE if not bin_record else Risk.RISK_HIGH,
+                            msg_ref=self.MSG_REF,
                             description=description,
-                            msg_ref="pscanrules.informationdisclosurereferrer",
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
                     # Check for email address in the referrer URL
                     if self.is_email_address(referrer):
                         return Alert(
-                            risk_category="Informational",
+                            risk_category=self.RISK,
+                            confidence=self.CONFIDENCE,
+                            msg_ref=self.MSG_REF,
                             description="Email address found in Referrer header",
-                            msg_ref="pscanrules.informationdisclosurereferrer",
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
                     # Check for US Social Security Number in the referrer URL
                     if self.is_us_ssn(referrer):
                         return Alert(
-                            risk_category="Informational",
+                            risk_category=self.RISK,
+                            confidence=self.CONFIDENCE,
+                            msg_ref=self.MSG_REF,
                             description="US Social Security Number found in Referrer header",
-                            msg_ref="pscanrules.informationdisclosurereferrer",
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def contains_sensitive_information(self, referrer: str) -> str:
         """

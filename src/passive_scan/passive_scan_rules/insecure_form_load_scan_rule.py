@@ -3,6 +3,9 @@ from requests.models import Request, Response
 from bs4 import BeautifulSoup
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,15 @@ class InsecureFormLoadScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for forms loading over insecure HTTP connections.
     """
+    MSG_REF = "pscanrules.insecureformload"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A02_CRYPTO_FAIL,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG,
+        CommonAlertTag.WSTG_V42_CRYP_03_CRYPTO_FAIL
+    ]
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -25,11 +37,11 @@ class InsecureFormLoadScanRule(BasePassiveScanRule):
         try:
             # Check if the response is HTML
             if not self.is_response_html(response):
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
             
             # Check if the request is already HTTPS
             if request.url.lower().startswith("https://"):
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
             
             # Parse the HTML response
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -39,18 +51,19 @@ class InsecureFormLoadScanRule(BasePassiveScanRule):
                 # Check if form action uses HTTPS while the page is served over HTTP
                 if form_action and form_action.strip().lower().startswith("https://"):
                     evidence = str(form)
-                    return Alert(risk_category="Medium",
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE,
                                  description="Form action uses HTTPS while the page is served over HTTP",
-                                 msg_ref="pscanrules.insecureformload",
+                                 msg_ref=self.MSG_REF,
                                  cwe_id=self.get_cwe_id(),
                                  wasc_id=self.get_wasc_id(),
                                  evidence=evidence)
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def is_response_html(self, response: Response) -> bool:
         """

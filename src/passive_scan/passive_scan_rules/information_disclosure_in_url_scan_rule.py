@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +13,15 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for information disclosure in URL parameters.
     """
-    
+    MSG_REF = "pscanrules.informationdisclosureinurl"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED
+    ]
+
     # Regular expressions for detecting sensitive information patterns
     EMAIL_PATTERN = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}\b")
     CREDIT_CARD_PATTERN = re.compile(
@@ -50,44 +61,48 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
                 sensitive_info = self.contains_sensitive_information(param)
                 if sensitive_info:
                     return Alert(
-                        risk_category="Informational",
+                        risk_category=self.RISK,
+                        confidence=self.CONFIDENCE,
+                        msg_ref=self.MSG_REF,
                         description=f"Sensitive information found in URL parameter: {sensitive_info}",
-                        msg_ref="pscanrules.informationdisclosureinurl",
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id()
                     )
                 # Check if parameter value is a credit card number
                 if self.is_credit_card(value):
                     return Alert(
-                        risk_category="Informational",
+                        risk_category=self.RISK,
+                        confidence=self.CONFIDENCE,
+                        msg_ref=self.MSG_REF,
                         description="Credit card number found in URL parameter",
-                        msg_ref="pscanrules.informationdisclosureinurl",
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id()
                     )
                 # Check if parameter value is an email address
                 if self.is_email_address(value):
                     return Alert(
-                        risk_category="Informational",
+                        risk_category=self.RISK,
+                        confidence=self.CONFIDENCE,
+                        msg_ref=self.MSG_REF,
                         description="Email address found in URL parameter",
-                        msg_ref="pscanrules.informationdisclosureinurl",
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id()
                     )
                 # Check if parameter value is a US Social Security Number
                 if self.is_us_ssn(value):
                     return Alert(
-                        risk_category="Informational",
+                        risk_category=self.RISK,
+                        confidence=self.CONFIDENCE,
+                        msg_ref=self.MSG_REF,
                         description="US Social Security Number found in URL parameter",
-                        msg_ref="pscanrules.informationdisclosureinurl",
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id()
                     )
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def contains_sensitive_information(self, param_name: str) -> str:
         """

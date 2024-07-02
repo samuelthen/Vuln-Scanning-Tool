@@ -16,6 +16,11 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
     RISK = Risk.RISK_INFO
     CONFIDENCE = Confidence.CONFIDENCE_LOW
 
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A03_INJECTION,
+        CommonAlertTag.OWASP_2017_A01_INJECTION
+    ]
+
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for user-controlled cookies in the HTTP response.

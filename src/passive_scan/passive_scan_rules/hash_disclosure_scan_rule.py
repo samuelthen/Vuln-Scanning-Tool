@@ -3,6 +3,9 @@ import re
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +13,13 @@ class HashDisclosureScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for hash signatures in HTTP requests and responses.
     """
+    MSG_REF = "pscanrules.hashdisclosure"
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A04_INSECURE_DESIGN,
+        CommonAlertTag.OWASP_2017_A03_DATA_EXPOSED
+    ]
+
     # Define hash patterns and their corresponding alerts
     hash_patterns = {
         re.compile(r"\$LM\$[a-f0-9]{16}", re.IGNORECASE): ("LanMan / DES", "High", "High"),
@@ -58,17 +68,17 @@ class HashDisclosureScanRule(BasePassiveScanRule):
                         matches = pattern.findall(part)
                         for match in matches:
                             logger.debug(f"Found a match for hash type {desc}: {match}")
-                            return Alert(risk_category=risk, 
-                                        #  confidence=confidence,
+                            return Alert(risk_category=self.get_risk(risk), 
+                                         confidence=self.get_confidence(confidence),
                                          description="Hash Disclosure",
                                          evidence=f"{desc} found: {match}", 
-                                         msg_ref="pscanrules.hashdisclosure",
+                                         msg_ref=self.MSG_REF,
                                          cwe_id=self.get_cwe_id(),
                                          wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logger.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def __str__(self) -> str:
         """
@@ -96,3 +106,25 @@ class HashDisclosureScanRule(BasePassiveScanRule):
             int: The WASC ID.
         """
         return 13 # WASC-13: Information Leakage
+    
+    def get_risk(self, str):
+        if str == "High":
+            return Risk.RISK_HIGH
+        elif str == "Medium":
+            return Risk.RISK_MEDIUM
+        elif str == "Low":
+            return Risk.RISK_LOW
+        elif str == "Info":
+            return Risk.RISK_INFO
+        else:
+            return False
+        
+    def get_confidence(self, str):
+        if str == "High":
+            return Confidence.CONFIDENCE_HIGH
+        elif str == "Medium":
+            return Confidence.CONFIDENCE_MEDIUM
+        elif str == "Low":
+            return Confidence.CONFIDENCE_LOW
+        else:
+            return False        

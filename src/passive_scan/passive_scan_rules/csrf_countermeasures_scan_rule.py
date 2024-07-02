@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,16 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for CSRF countermeasures in HTML forms.
     """
+    MSG_REF = "pscanrules.noanticsrftokens"
+    RISK = Risk.RISK_MEDIUM
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A05_BROKEN_AC,
+        CommonAlertTag.WSTG_V42_SESS_05_CSRF
+    ]
+
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for the presence of CSRF countermeasures in HTML forms.
@@ -29,7 +42,7 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
                 
                 forms = soup.find_all('form')
                 if not forms:
-                    return NoAlert()
+                    return NoAlert(msg_ref=self.MSG_REF)
 
                 # List of CSRF token names to check for
                 csrf_tokens = ["csrf_token", "csrf", "xsrf_token", "X-CSRF-Token"]
@@ -55,18 +68,19 @@ class CsrfCountermeasuresScanRule(BasePassiveScanRule):
 
                     if not has_csrf_token:
                         evidence = str(form)
-                        return Alert(risk_category="Medium", 
+                        return Alert(risk_category=self.RISK,
+                                     confidence=self.CONFIDENCE, 
                                      description="Form without CSRF countermeasures", 
-                                     msg_ref="pscanrules.noanticsrftokens", 
+                                     msg_ref=self.MSG_REF, 
                                      cwe_id=self.get_cwe_id(), 
                                      wasc_id=self.get_wasc_id(), 
                                      evidence=evidence)
             
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
         
     def form_on_ignore_list(self, form, ignore_list):
         """

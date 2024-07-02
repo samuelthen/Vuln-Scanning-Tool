@@ -9,15 +9,7 @@
   },
   "passive_vulnerabilities": {
     "informational": {},
-    "low": {
-      "Cookie Without Secure Flag": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0ef9027e30e192665125a3bd5ed906f7; path=/",
-          "cwe_id": 614,
-          "wasc_id": 13
-        }
-      }
-    },
+    "low": {},
     "medium": {},
     "high": {}
   }

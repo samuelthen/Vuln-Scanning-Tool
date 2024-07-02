@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,15 @@ class CookieLooselyScopedScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for loosely scoped cookies.
     """
+    MSG_REF = "pscanrules.cookielooselyscoped"
+    RISK = Risk.RISK_INFO
+    CONFIDENCE = Confidence.CONFIDENCE_LOW
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A08_INTEGRITY_FAIL,
+        CommonAlertTag.OWASP_2017_A06_SEC_MISCONFIG,
+        CommonAlertTag.WSTG_V42_SESS_02_COOKIE_ATTRS
+    ]
     
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -34,17 +46,18 @@ class CookieLooselyScopedScanRule(BasePassiveScanRule):
                         loosely_scoped_cookies.append(cookie)
                 
                 if loosely_scoped_cookies:
-                    return Alert(risk_category="Info",
+                    return Alert(risk_category=self.RISK,
+                                 confidence=self.CONFIDENCE,
                                  description="Loosely scoped cookies detected",
-                                 msg_ref="pscanrules.cookielooselyscoped",
+                                 msg_ref=self.MSG_REF,
                                  evidence=", ".join(loosely_scoped_cookies),
                                  cwe_id=self.get_cwe_id(), 
                                  wasc_id=self.get_wasc_id())
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
     
     def _get_domain_from_cookie_parts(self, cookie_parts):
         for part in cookie_parts:

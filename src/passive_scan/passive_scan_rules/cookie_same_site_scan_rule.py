@@ -2,6 +2,9 @@ import logging
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
+from .utils.confidence import Confidence
+from .utils.risk import Risk
+from .utils.common_alert_tag import CommonAlertTag
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +12,16 @@ class CookieSameSiteScanRule(BasePassiveScanRule):
     """
     Passive scan rule to check for the SameSite attribute in cookies.
     """
+    MSG_REF = "pscanrules.cookiesamesite"
+    RISK = Risk.RISK_LOW
+    CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
+
+    ALERT_TAGS = [
+        CommonAlertTag.OWASP_2021_A01_BROKEN_AC,
+        CommonAlertTag.OWASP_2017_A05_BROKEN_AC,
+        CommonAlertTag.WSTG_V42_SESS_02_COOKIE_ATTRS
+    ]
+
     SAME_SITE_COOKIE_ATTRIBUTE = "SameSite"
     SAME_SITE_COOKIE_VALUE_STRICT = "Strict"
     SAME_SITE_COOKIE_VALUE_LAX = "Lax"
@@ -28,7 +41,7 @@ class CookieSameSiteScanRule(BasePassiveScanRule):
         try:
             cookies = response.headers.get('Set-Cookie')
             if not cookies:
-                return NoAlert()
+                return NoAlert(msg_ref=self.MSG_REF)
 
             cookies_list = cookies.split(', ')
             for cookie in cookies_list:
@@ -47,11 +60,11 @@ class CookieSameSiteScanRule(BasePassiveScanRule):
                     # SameSite attribute has an illegal value
                     return self.build_alert(cookie, "SameSite attribute has an illegal value in cookie")
 
-            return NoAlert()
+            return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
-            return ScanError(description=str(e))
+            return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def build_alert(self, cookie: str, description: str) -> Alert:
         """
@@ -64,9 +77,10 @@ class CookieSameSiteScanRule(BasePassiveScanRule):
         Returns:
             Alert: The constructed Alert object.
         """
-        return Alert(risk_category="Low",
+        return Alert(risk_category=self.RISK,
+                     confidence=self.CONFIDENCE,
                      description=description,
-                     msg_ref="pscanrules.cookiesamesite",
+                     msg_ref=self.MSG_REF,
                      evidence=cookie,
                      cwe_id=self.get_cwe_id(),
                      wasc_id=self.get_wasc_id())
