@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
                 if result.risk_category == Risk.RISK_INFO:
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
-                    if msg not in ps_results[result.risk_category]:
+                    if msg not in ps_results[risk_level]:
                         ps_results[risk_level][msg] = [url]
                     else:
                         ps_results[risk_level][msg].append(url)
