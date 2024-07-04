@@ -6,6 +6,7 @@ from .utils.alert import Alert, NoAlert, ScanError
 from .utils.confidence import Confidence
 from .utils.risk import Risk
 from .utils.common_alert_tag import CommonAlertTag
+from .utils.binlist import BinList
 
 logger = logging.getLogger(__name__)
 
@@ -41,24 +42,24 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
         """
         self.sensitive_words = self.SENSITIVE_WORDS
 
-    class BinList:
-        """
-        Mock class for BinList to simulate BIN record lookup.
-        """
-        BIN_RECORDS = {
-            '411111': 'Visa',
-            '550000': 'MasterCard',
-            '340000': 'American Express',
-            '300000': 'Diners Club',
-            '601100': 'Discover',
-            '201400': 'EnRoute',
-            '213100': 'JCB'
-        }
+    # class BinList:
+    #     """
+    #     Mock class for BinList to simulate BIN record lookup.
+    #     """
+    #     BIN_RECORDS = {
+    #         '411111': 'Visa',
+    #         '550000': 'MasterCard',
+    #         '340000': 'American Express',
+    #         '300000': 'Diners Club',
+    #         '601100': 'Discover',
+    #         '201400': 'EnRoute',
+    #         '213100': 'JCB'
+    #     }
 
-        @staticmethod
-        def get(card_number: str) -> str:
-            bin_number = card_number[:6]
-            return InformationDisclosureReferrerScanRule.BinList.BIN_RECORDS.get(bin_number, None)
+    #     @staticmethod
+    #     def get(card_number: str) -> str:
+    #         bin_number = card_number[:6]
+    #         return InformationDisclosureReferrerScanRule.BinList.BIN_RECORDS.get(bin_number, None)
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -92,7 +93,8 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                         )
                     # Check for credit card information in the referrer URL
                     if self.is_credit_card(referrer):
-                        bin_record = self.BinList.get(referrer)
+                        bin_record = BinList.get_singleton().get(referrer)
+                        
                         description = "Credit card number found in Referrer header"
                         if bin_record:
                             description += f" with BIN record: {bin_record}"
@@ -100,7 +102,8 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                             risk_category=self.RISK,
                             confidence=self.CONFIDENCE if not bin_record else Risk.RISK_HIGH,
                             msg_ref=self.MSG_REF,
-                            description=description,
+                            evidence=bin_record,
+                            description=f"{referrer}. description",
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
                         )

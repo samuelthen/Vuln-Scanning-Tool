@@ -19,28 +19,28 @@
     "low": {
       "Cookie Without Secure Flag": {
         "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0e69c7f5d64f99b3f4a12b30da409b19; path=/",
+          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
           "cwe_id": 614,
           "wasc_id": 13
         }
       },
       "Cookie No HttpOnly Flag": {
         "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0e69c7f5d64f99b3f4a12b30da409b19; path=/",
+          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
           "cwe_id": 1004,
           "wasc_id": 13
         }
       },
       "Cookie without SameSite Attribute": {
         "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=0e69c7f5d64f99b3f4a12b30da409b19; path=/",
+          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
           "cwe_id": 1275,
           "wasc_id": 13
         }
       },
       "Hash Disclosure": {
         "https://testportal.helium.sh/": {
-          "evidence": "MD4 / MD5 found: 0e69c7f5d64f99b3f4a12b30da409b19",
+          "evidence": "MD4 / MD5 found: 8c1cb70094ecfb913a5d3542b19c6f3a",
           "cwe_id": 200,
           "wasc_id": 13
         }

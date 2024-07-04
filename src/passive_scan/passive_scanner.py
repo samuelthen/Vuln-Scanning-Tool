@@ -43,6 +43,17 @@ from .passive_scan_rules.content_security_policy_scan_rule import ContentSecurit
 from .passive_scan_rules.information_disclosure_debug_errors_scan_rule import InformationDisclosureDebugErrorsScanRule
 from .passive_scan_rules.information_disclosure_suspicious_comments_scan_rule import InformationDisclosureSuspiciousCommentsScanRule
 from .passive_scan_rules.charset_mismatch_scan_rule import CharsetMismatchScanRule
+from .passive_scan_rules.info_private_address_disclosure_scan_rule import InfoPrivateAddressDisclosureScanRule
+from .passive_scan_rules.info_session_id_url_scan_rule import InfoSessionIdUrlScanRule
+from .passive_scan_rules.link_target_scan_rule import LinkTargetScanRule
+from .passive_scan_rules.modern_app_detection_scan_rule import ModernAppDetectionScanRule
+from .passive_scan_rules.pii_scan_rule import PiiScanRule
+from .passive_scan_rules.retrieved_from_cache_scan_rule import RetrievedFromCacheScanRule
+from .passive_scan_rules.timestamp_disclosure_scan_rule import TimestampDisclosureScanRule
+from .passive_scan_rules.user_controlled_charset_scan_rule import UserControlledCharsetScanRule
+from .passive_scan_rules.user_controlled_open_redirect_scan_rule import UserControlledOpenRedirectScanRule
+from .passive_scan_rules.username_idor_scan_rule import UsernameIdorScanRule
+from .passive_scan_rules.viewstate_scan_rule import ViewstateScanRule
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +106,18 @@ class PassiveScanner:
         self.scan_rules.append(InformationDisclosureDebugErrorsScanRule())
         self.scan_rules.append(InformationDisclosureSuspiciousCommentsScanRule())
         self.scan_rules.append(CharsetMismatchScanRule())
+        self.scan_rules.append(InfoPrivateAddressDisclosureScanRule())
+        self.scan_rules.append(InfoSessionIdUrlScanRule())
+        self.scan_rules.append(LinkTargetScanRule())
+        self.scan_rules.append(ModernAppDetectionScanRule())
+        self.scan_rules.append(PiiScanRule())
+        self.scan_rules.append(RetrievedFromCacheScanRule())
+        self.scan_rules.append(TimestampDisclosureScanRule())
+        self.scan_rules.append(UserControlledCharsetScanRule())
+        self.scan_rules.append(UserControlledOpenRedirectScanRule())
+        self.scan_rules.append(UsernameIdorScanRule())
+        self.scan_rules.append(ViewstateScanRule())
+
 
     def run_scan(self, request: Request, response: Response) -> List[Alert]:
         """Run the vulnerability scan."""

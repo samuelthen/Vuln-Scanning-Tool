@@ -21,7 +21,7 @@ class Alert:
 
     def __init__(self, risk_category: Risk, msg_ref=None, description=None, 
                  evidence=None, cwe_id=None, wasc_id=None, confidence: Confidence=None,
-                 attack=None, param=None, method=None):
+                 attack=None, param=None, method=None, other_info=None):
         """
         Constructs all the necessary attributes for the Alert object.
 
@@ -49,6 +49,7 @@ class Alert:
         self.param = param
         self.method = method
         self.confidence = confidence
+        self.other_info = other_info
 
     def get(self):
         """
