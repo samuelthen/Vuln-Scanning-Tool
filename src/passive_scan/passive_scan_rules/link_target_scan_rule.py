@@ -115,7 +115,10 @@ class LinkTargetScanRule(BasePassiveScanRule):
         """
         target = link.get(self.TARGET_ATTRIBUTE)
         if target and target.lower() == self.BLANK.lower():
-            rel = link.get(self.REL_ATTRIBUTE, "").lower()
+            rel = link.get(self.REL_ATTRIBUTE, "")
+            if isinstance(rel, list):
+                rel = ' '.join(rel)  # Convert list to a space-separated string
+            rel = rel.lower()
             if self.OPENER in rel and self.NOOPENER not in rel:
                 return True
         return False

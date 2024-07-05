@@ -105,8 +105,7 @@ class MixedContentScanRule(BasePassiveScanRule):
             msg_ref=self.MSG_REF,
             cwe_id=self.get_cwe_id(),
             wasc_id=self.get_wasc_id(),
-            details=all_details,
-            evidence=first
+            evidence=f"{first}" # . Details: {all_details}
         )
 
     def parse_html(self, html_content):

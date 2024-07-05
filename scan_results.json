@@ -1,89 +1,164 @@
 {
   "urls": {
     "in_scope_urls": [
-      "https://testportal.helium.sh/"
+      "https://google-gruyere.appspot.com/static/cheese_w.png",
+      "https://google-gruyere.appspot.com/static/cheese_b.png",
+      "https://google-gruyere.appspot.com/part1",
+      "https://google-gruyere.appspot.com/",
+      "https://google-gruyere.appspot.com/part2"
     ],
     "out_scope_urls": [
-      "http://studio7designs.com/contact-quote/"
+      "https://www.google.com/search?q=sanitize+html",
+      "https://www.google.com/search?q=all+your+base+are+belong+to+us",
+      "https://www.google.com/search?q=utf-7",
+      "https://www.owasp.org/index.php/OWASP_Zed_Attack_Proxy_Project",
+      "https://creativecommons.org/licenses/by-nd/3.0/us/",
+      "https://www.google.com/search?q=XSS+auto+escaping",
+      "https://www.kb.cert.org/vuls/",
+      "https://portswigger.net/burp/",
+      "https://www.google.com/search?q=understanding+cross-site+scripting",
+      "https://www.python.org/downloads/",
+      "https://www.google.com/search?q=same+origin+policy",
+      "http://www.json.org/",
+      "https://www.w3.org/TR/html40/index/attributes.html",
+      "https://www.google.com/intl/en/policies/terms/",
+      "https://creativecommons.org/licenses/by/3.0/us/"
     ]
   },
   "passive_vulnerabilities": {
     "informational": {
+      "Server Leaks its Webserver Application via \"Server\" HTTP Response Header Field": [
+        "https://google-gruyere.appspot.com/static/cheese_w.png",
+        "https://google-gruyere.appspot.com/static/cheese_b.png",
+        "https://google-gruyere.appspot.com/part1",
+        "https://google-gruyere.appspot.com/",
+        "https://google-gruyere.appspot.com/part2"
+      ],
+      "Retrieved from Cache": [
+        "https://google-gruyere.appspot.com/static/cheese_w.png",
+        "https://google-gruyere.appspot.com/static/cheese_b.png"
+      ],
+      "Re-examine Cache-control Directives": [
+        "https://google-gruyere.appspot.com/part1",
+        "https://google-gruyere.appspot.com/",
+        "https://google-gruyere.appspot.com/part2"
+      ],
       "Information Disclosure - Suspicious Comments": [
-        "https://testportal.helium.sh/"
+        "https://google-gruyere.appspot.com/part1",
+        "https://google-gruyere.appspot.com/",
+        "https://google-gruyere.appspot.com/part2"
       ],
       "Charset Mismatch": [
-        "https://testportal.helium.sh/"
+        "https://google-gruyere.appspot.com/part1",
+        "https://google-gruyere.appspot.com/",
+        "https://google-gruyere.appspot.com/part2"
+      ],
+      "Modern Web Application": [
+        "https://google-gruyere.appspot.com/part1",
+        "https://google-gruyere.appspot.com/",
+        "https://google-gruyere.appspot.com/part2"
       ]
     },
     "low": {
-      "Cookie Without Secure Flag": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
-          "cwe_id": 614,
-          "wasc_id": 13
-        }
-      },
-      "Cookie No HttpOnly Flag": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
-          "cwe_id": 1004,
-          "wasc_id": 13
-        }
-      },
-      "Cookie without SameSite Attribute": {
-        "https://testportal.helium.sh/": {
-          "evidence": "PHPSESSID=8c1cb70094ecfb913a5d3542b19c6f3a; path=/",
-          "cwe_id": 1275,
-          "wasc_id": 13
+      "Strict-Transport-Security Header Not Set": {
+        "https://google-gruyere.appspot.com/static/cheese_w.png": {
+          "cwe_id": 319,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/static/cheese_b.png": {
+          "cwe_id": 319,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part1": {
+          "cwe_id": 319,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/": {
+          "cwe_id": 319,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part2": {
+          "cwe_id": 319,
+          "wasc_id": 15
         }
       },
       "Hash Disclosure": {
-        "https://testportal.helium.sh/": {
-          "evidence": "MD4 / MD5 found: 8c1cb70094ecfb913a5d3542b19c6f3a",
+        "https://google-gruyere.appspot.com/static/cheese_w.png": {
+          "evidence": "MD4 / MD5 found: ca71410bd4bd4661cf8eb36f33a28b2f",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://google-gruyere.appspot.com/static/cheese_b.png": {
+          "evidence": "MD4 / MD5 found: 4dc280fc7b5050ace8a177b351b96ca8",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://google-gruyere.appspot.com/part1": {
+          "evidence": "MD4 / MD5 found: c4f5f5a4dee4a43165469e235ee12c0c",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://google-gruyere.appspot.com/": {
+          "evidence": "MD4 / MD5 found: b016dfdfe5c1528bee3e963652aeb51f",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://google-gruyere.appspot.com/part2": {
+          "evidence": "MD4 / MD5 found: e68318762f3a8e032242d69d2e82f9c0",
           "cwe_id": 200,
           "wasc_id": 13
         }
       },
       "X-Content-Type-Options Header Missing": {
-        "https://testportal.helium.sh/": {
+        "https://google-gruyere.appspot.com/static/cheese_w.png": {
           "cwe_id": 693,
           "wasc_id": 15
-        }
-      },
-      "Server Leaks Information via \"X-Powered-By\" HTTP Response Header Field(s)": {
-        "https://testportal.helium.sh/": {
-          "evidence": "X-Powered-By: PHP/7.2.34",
-          "cwe_id": 200,
-          "wasc_id": 13
-        }
-      },
-      "Server Leaks Version Information via \"Server\" HTTP Response Header Field": {
-        "https://testportal.helium.sh/": {
-          "evidence": "nginx/1.18.0 (Ubuntu)",
-          "cwe_id": 200,
-          "wasc_id": 13
+        },
+        "https://google-gruyere.appspot.com/static/cheese_b.png": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part1": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part2": {
+          "cwe_id": 693,
+          "wasc_id": 15
         }
       }
     },
     "medium": {
       "Missing Anti-clickjacking Header": {
-        "https://testportal.helium.sh/": {
+        "https://google-gruyere.appspot.com/part1": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part2": {
           "cwe_id": 1021,
           "wasc_id": 15
         }
       },
       "Content Security Policy (CSP) Header Not Set": {
-        "https://testportal.helium.sh/": {
+        "https://google-gruyere.appspot.com/part1": {
           "cwe_id": 693,
           "wasc_id": 15
-        }
-      },
-      "Absence of Anti-CSRF Tokens": {
-        "https://testportal.helium.sh/": {
-          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
-          "cwe_id": 352,
-          "wasc_id": 9
+        },
+        "https://google-gruyere.appspot.com/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://google-gruyere.appspot.com/part2": {
+          "cwe_id": 693,
+          "wasc_id": 15
         }
       }
     },

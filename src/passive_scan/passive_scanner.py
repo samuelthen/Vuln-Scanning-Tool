@@ -128,7 +128,7 @@ class PassiveScanner:
             try:
                 result = scan_rule.check_risk(request, response)
                 results[str(scan_rule)] = result
-                # print(str(result))
+
             except Exception as e:
                 
                 logger.error(e)

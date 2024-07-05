@@ -18,11 +18,18 @@ def access_nested_dict(data, key_string):
     value = data
     for key in keys:
         value = value[key]
+    
+    if isinstance(value, dict):
+        return value["value"]
+    
     return value
 
 if __name__ == '__main__':
-    start_url = 'https://testportal.helium.sh/'  # Replace with the URL you want to start crawling
-    spider = WebSpider(base_url=start_url, max_pages=1)
+    start_url = "https://google-gruyere.appspot.com/"
+    # start_url = "http://www.itsecgames.com/"
+    # start_url = "https://en.wikipedia.org/wiki/Indonesian_rupiah"
+    # start_url = 'https://testportal.helium.sh/'  # Replace with the URL you want to start crawling
+    spider = WebSpider(base_url=start_url, max_pages=5)
     urls, out_scope_urls = spider.crawl()
     crawl_results = {
         "in_scope_urls": urls,
@@ -46,10 +53,8 @@ if __name__ == '__main__':
             results = scanner.run_scan(request, response).values()
             
             for result in results:
-                # print(access_nested_dict(messages, result.msg_ref + ".name"))
-                
+                # print(result)
                 risk_level = result.risk_category.value[1].lower()
-                # print(risk_level)
 
                 if result.risk_category == Risk.RISK_INFO:
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
@@ -59,7 +64,9 @@ if __name__ == '__main__':
                         ps_results[risk_level][msg].append(url)
                 
                 elif result.risk_category in report_levels:
+
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
+                    # print(msg)
                     output = {}
                     if result.evidence is not None:
                         output["evidence"] = result.evidence
@@ -69,8 +76,10 @@ if __name__ == '__main__':
                         output["wasc_id"] = result.wasc_id    
 
                     if msg not in ps_results[risk_level]:
+
                         ps_results[risk_level][msg] = {url: output}
                     else:
+
                         ps_results[risk_level][msg][url] = output
 
         except Exception as e:

@@ -42,7 +42,7 @@ class RetrievedFromCacheScanRule(BasePassiveScanRule):
             for xcache_header in xcache_headers:
                 for proxy_server_details in xcache_header.split(","):
                     proxy_server_details = proxy_server_details.strip()
-                    logger.trace("Proxy HIT/MISS details [%s]", proxy_server_details)
+                    logger.debug("Proxy HIT/MISS details [%s]", proxy_server_details)
                     details_array = proxy_server_details.split(" ", 2)
                     if len(details_array) >= 1:
                         hit_or_miss = details_array[0].upper()
@@ -63,7 +63,7 @@ class RetrievedFromCacheScanRule(BasePassiveScanRule):
                 age_headers = [age_headers]
             
             for age_header in age_headers:
-                logger.trace("Validating Age header value [%s]", age_header)
+                logger.debug("Validating Age header value [%s]", age_header)
                 try:
                     age_as_long = int(age_header)
                     if age_as_long >= 0:
