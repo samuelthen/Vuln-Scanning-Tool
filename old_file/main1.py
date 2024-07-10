@@ -1,12 +1,14 @@
 import yaml
 import logging
+import requests
 import json
+from requests.models import Request, Response
+from src.spider.web_spider import WebSpider
 from src.passive_scan.passive_scan_rules.utils.risk import Risk
 from src.passive_scan.passive_scanner import PassiveScanner
-from src.spider.spider import EnhancedWebSpider
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO)
 
 with open('src/passive_scan/passive_scan_rules/utils/messages.yaml', 'r') as file:
     messages = yaml.safe_load(file)
@@ -23,12 +25,12 @@ def access_nested_dict(data, key_string):
     return value
 
 if __name__ == '__main__':
+    # start_url = "https://google-gruyere.appspot.com/"
+    # start_url = "http://www.itsecgames.com/"
+    # start_url = "https://en.wikipedia.org/wiki/Indonesian_rupiah"
     start_url = 'https://testportal.helium.sh/'  # Replace with the URL you want to start crawling
-    
-    spider = EnhancedWebSpider(start_url, max_pages=30, max_depth=3, 
-                               max_threads=10, query_param_handling=0)
-    spider.crawl()
-    urls, out_scope_urls = list(spider.visited_urls), list(spider.out_of_scope)
+    spider = WebSpider(base_url=start_url, max_pages=30)
+    urls, out_scope_urls = spider.crawl()
     crawl_results = {
         "in_scope_urls": urls,
         "out_scope_urls": out_scope_urls
@@ -39,15 +41,19 @@ if __name__ == '__main__':
                   "low": {},
                   "medium": {},
                   "high": {}}
-
+    
     for url in urls:
         try:
-            request, response = spider.url_request_response_map[url]
+            request = Request(url=url)
+            response = requests.get(url)
+            # print(response.text)
 
+            # report_levels = ["high", "medium", "low"]
             report_levels = [Risk.RISK_HIGH, Risk.RISK_MEDIUM, Risk.RISK_LOW]
             results = scanner.run_scan(request, response).values()
             
             for result in results:
+                # print(result)
                 risk_level = result.risk_category.value[1].lower()
 
                 if result.risk_category == Risk.RISK_INFO:
@@ -58,7 +64,9 @@ if __name__ == '__main__':
                         ps_results[risk_level][msg].append(url)
                 
                 elif result.risk_category in report_levels:
+
                     msg = access_nested_dict(messages, result.msg_ref + ".name")
+                    # print(msg)
                     output = {}
                     if result.evidence is not None:
                         output["evidence"] = result.evidence
@@ -68,13 +76,29 @@ if __name__ == '__main__':
                         output["wasc_id"] = result.wasc_id    
 
                     if msg not in ps_results[risk_level]:
+
                         ps_results[risk_level][msg] = {url: output}
                     else:
+
                         ps_results[risk_level][msg][url] = output
 
         except Exception as e:
             logger.error(e)
-
+    
     data = {"urls": crawl_results, "passive_vulnerabilities": ps_results}
     with open("scan_results.json", 'w') as file:
         json.dump(data, file, indent=2)
+    
+    
+    # with open('scan_results.csv', mode='w', newline='', encoding="utf-8") as file:
+    #     all_tests = set().union(*(d.keys() for d in ps_results))
+
+    #     fieldnames = ['Index', 'URL'] + list(all_tests)
+    #     writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+    #     writer.writeheader()
+    #     for index, (url, result) in enumerate(zip(urls, ps_results), start=1):
+    #         row = {'Index': index, 'URL': url}
+    #         row.update(result)
+    #         writer.writerow(row)
+    

@@ -394,8 +394,8 @@ class EnhancedWebSpider:
 if __name__ == "__main__":
     url = "https://testportal.helium.sh/"
     start_time = time.time()
-    spider = EnhancedWebSpider(url, max_pages=40, max_depth=2, max_threads=10,
-                               query_param_handling=2)
+    spider = EnhancedWebSpider(url, max_pages=20, max_depth=2, max_threads=10,
+                               query_param_handling=0)
     spider.crawl()
     end_time = time.time()
     print(end_time-start_time)
