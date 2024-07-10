@@ -39,37 +39,39 @@ class AntiClickjackingScanRule(BasePassiveScanRule):
                 # Check for Content-Security-Policy header
                 included_in_csp = False
                 if "Content-Security-Policy" in response.headers:
-                    csp_values = response.headers.get("Content-Security-Policy").lower()
-                    if "frame-ancestors" in csp_values:
+                    csp_values = response.headers.get("Content-Security-Policy")
+                    if csp_values and isinstance(csp_values, str) and "frame-ancestors" in csp_values.lower():
                         included_in_csp = True
                 
                 # Check for X-Frame-Options header
                 if "X-Frame-Options" in response.headers:
-                    xfo_values = response.headers.get("X-Frame-Options").lower()
-                    # Check for proper X-Frame-Options values
-                    if "deny" not in xfo_values and "sameorigin" not in xfo_values:
-                        return Alert(risk_category=self.RISK if not included_in_csp else Risk.RISK_LOW,
-                                     confidence=self.CONFIDENCE, 
-                                     description="X-Frame-Options not properly set", 
-                                     msg_ref="pscanrules.anticlickjacking.compliance.malformed.setting",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())
-                    # Check for multiple X-Frame-Options headers
-                    if len(xfo_values) > 1:
-                        return Alert(risk_category=self.RISK if not included_in_csp else Risk.RISK_LOW,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Multiple X-Frame-Options headers",
-                                     msg_ref="pscanrules.anticlickjacking.multiple.header",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())
+                    xfo_values = response.headers.get("X-Frame-Options")
+                    if xfo_values:
+                        if isinstance(xfo_values, list):
+                            # Check for multiple X-Frame-Options headers
+                            if len(xfo_values) > 1:
+                                return Alert(risk_category=self.RISK if not included_in_csp else Risk.RISK_LOW,
+                                            confidence=self.CONFIDENCE, 
+                                            description="Multiple X-Frame-Options headers",
+                                            msg_ref="pscanrules.anticlickjacking.multiple.header",
+                                            cwe_id=self.get_cwe_id(), 
+                                            wasc_id=self.get_wasc_id())
+                            xfo_values = xfo_values[0]
+                        if isinstance(xfo_values, str) and "deny" not in xfo_values.lower() and "sameorigin" not in xfo_values.lower():
+                            return Alert(risk_category=self.RISK if not included_in_csp else Risk.RISK_LOW,
+                                        confidence=self.CONFIDENCE, 
+                                        description="X-Frame-Options not properly set", 
+                                        msg_ref="pscanrules.anticlickjacking.compliance.malformed.setting",
+                                        cwe_id=self.get_cwe_id(), 
+                                        wasc_id=self.get_wasc_id())
                 else:
                     # X-Frame-Options header is missing
                     return Alert(risk_category=self.RISK if not included_in_csp else Risk.RISK_LOW,
-                                 confidence=self.CONFIDENCE, 
-                                 description="X-Frame-Options header missing",
-                                 msg_ref="pscanrules.anticlickjacking.missing",
-                                 cwe_id=self.get_cwe_id(), 
-                                 wasc_id=self.get_wasc_id())
+                                confidence=self.CONFIDENCE, 
+                                description="X-Frame-Options header missing",
+                                msg_ref="pscanrules.anticlickjacking.missing",
+                                cwe_id=self.get_cwe_id(), 
+                                wasc_id=self.get_wasc_id())
             
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
