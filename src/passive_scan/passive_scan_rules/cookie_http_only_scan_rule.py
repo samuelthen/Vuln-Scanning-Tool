@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
@@ -69,7 +71,7 @@ class CookieHttpOnlyScanRule(BasePassiveScanRule):
             # Handle any exceptions that occur during the scan
             logging.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-    
+
     def is_expired(self, header_value: str) -> bool:
         """
         Check if the cookie is expired.
@@ -84,14 +86,15 @@ class CookieHttpOnlyScanRule(BasePassiveScanRule):
         for key, morsel in cookie.items():
             expires = morsel.get('expires')
             if expires:
-                # Simple expiration check (you may need to handle different formats)
-                from datetime import datetime
                 try:
-                    expire_time = datetime.strptime(expires, "%a, %d-%b-%Y %H:%M:%S %Z")
-                    if expire_time < datetime.utcnow():
+                    expire_time = parsedate_to_datetime(expires)
+                    if expire_time is not None and expire_time < datetime.now(timezone.utc):
+                        logging.info(f"Cookie '{key}' is expired (expires: {expire_time})")
                         return True
-                except ValueError:
-                    pass
+                    else:
+                        logging.info(f"Cookie '{key}' is not expired (expires: {expire_time})")
+                except (ValueError, TypeError) as e:
+                    logging.error(f"Error parsing expiration date for cookie '{key}': {e}")
         return False
     
     def get_cookie_ignore_list(self):
@@ -117,7 +120,7 @@ class CookieHttpOnlyScanRule(BasePassiveScanRule):
         """
         cookie = SimpleCookie(header_value)
         for key, morsel in cookie.items():
-            if attribute.lower() in morsel.get('httponly', '').lower():
+            if attribute.lower() == 'httponly' and morsel.get('httponly', False):
                 return True
         return False
     
