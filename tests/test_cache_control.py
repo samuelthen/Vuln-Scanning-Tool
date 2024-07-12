@@ -86,7 +86,7 @@ class TestCacheControlScanRule(BasePassiveScanRuleTest):
 
         result = self.scan_rule.check_risk(self.request, self.response)
         self.assert_scan_error(result)
-
+        
     def test_get_cwe_id(self):
         self.assertEqual(self.scan_rule.get_cwe_id(), 525)
 
