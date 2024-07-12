@@ -19,8 +19,7 @@ class TestAntiClickjackingScanRule(BasePassiveScanRuleTest):
         self.assert_alert(
             result,
             Risk.RISK_MEDIUM,
-            Confidence.CONFIDENCE_MEDIUM,
-            "X-Frame-Options header missing"
+            Confidence.CONFIDENCE_MEDIUM
         )
 
     def test_invalid_x_frame_options(self):

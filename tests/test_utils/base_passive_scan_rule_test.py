@@ -26,14 +26,10 @@ class BasePassiveScanRuleTest(unittest.TestCase):
         self.response.text = content
         self.response.headers['Content-Type'] = content_type
     
-    def assert_alert(self, result, risk_category: Risk, confidence: Confidence, 
-                     description=None, evidence=None):
+    def assert_alert(self, result, risk_category: Risk, confidence: Confidence):
         self.assertIsInstance(result, Alert)
         self.assertEqual(result.risk_category, risk_category)
         self.assertEqual(result.confidence, confidence)
-        # self.assertEqual(result.description, description)
-        # if evidence:
-        #     self.assertEqual(result.evidence, evidence)
     
     def assert_no_alert(self, result):
         self.assertIsInstance(result, NoAlert)
