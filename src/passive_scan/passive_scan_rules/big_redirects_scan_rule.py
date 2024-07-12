@@ -67,7 +67,7 @@ class BigRedirectsScanRule(BasePassiveScanRule):
             # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-        
+
     def get_predicted_response_size(self, redirect_uri_length: int) -> int:
         """
         Calculate the predicted size of the response body based on the URI length.
