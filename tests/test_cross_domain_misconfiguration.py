@@ -26,7 +26,7 @@ class TestCrossDomainMisconfigurationScanRule(BasePassiveScanRuleTest):
         self.response.content = b'Some content'
 
         result = self.scan_rule.check_risk(self.request, self.response)
-        self.assertIsInstance(result, Alert)
+        self.assert_alert(result, Risk.RISK_MEDIUM, Confidence.CONFIDENCE_MEDIUM)
 
     def test_cors_allow_origin_specific_domain(self):
         self.response.headers = {
@@ -47,7 +47,7 @@ class TestCrossDomainMisconfigurationScanRule(BasePassiveScanRuleTest):
             result = self.scan_rule.check_risk(self.request, self.response)
         except Exception as e:
             result = ScanError(description=str(e), msg_ref=self.scan_rule.MSG_REF)
-        self.assertIsInstance(result, ScanError)
+        self.assert_scan_error(result)
 
     def test_get_cwe_id(self):
         self.assertEqual(self.scan_rule.get_cwe_id(), 264)
