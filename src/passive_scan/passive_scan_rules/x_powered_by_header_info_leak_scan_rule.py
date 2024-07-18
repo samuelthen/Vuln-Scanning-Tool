@@ -39,9 +39,8 @@ class XPoweredByHeaderInfoLeakScanRule(BasePassiveScanRule):
             xpb_headers = self.get_x_powered_by_headers(response)
             if xpb_headers:
                 alert_evidence = xpb_headers[0]
-                alert_other_info = ""
                 if len(xpb_headers) > 1:  # Multiple X-Powered-By headers found
-                    alert_other_info = "\n".join(xpb_headers[1:])
+                    alert_evidence = "\n".join(xpb_headers[1:])
                 return Alert(risk_category=self.RISK,
                              confidence=self.CONFIDENCE,
                              description="X-Powered-By header information leak",
