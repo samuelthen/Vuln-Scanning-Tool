@@ -25,7 +25,7 @@ class HeartBleedScanRule(BasePassiveScanRule):
     ]
 
     # Pattern to identify the OpenSSL version in the response headers
-    openSSLversionPattern = re.compile(r'Server:.*?(OpenSSL/([0-9.]+[a-z-0-9]+))', re.IGNORECASE)
+    openSSLversionPattern = re.compile(r'OpenSSL/([0-9a-z.-]+)', re.IGNORECASE)
     
     # Vulnerable versions
     openSSLvulnerableVersions = [
@@ -43,27 +43,18 @@ class HeartBleedScanRule(BasePassiveScanRule):
     ]
 
     def check_risk(self, request: Request, response: Response) -> Alert:
-        """
-        Check for vulnerable OpenSSL versions in the HTTP response headers.
-
-        Args:
-            request (Request): The HTTP request object.
-            response (Response): The HTTP response object.
-
-        Returns:
-            Alert: An Alert object indicating the result of the risk check.
-        """
         try:
             response_headers = response.headers
+            server_header = response_headers.get('Server', '')
+            logger.debug(f"Server header: {server_header}")
 
-            # Match the OpenSSL version pattern
-            matcher = self.openSSLversionPattern.search(response_headers.get('Server', ''))
+            matcher = self.openSSLversionPattern.search(server_header)
             if matcher:
-                full_version_string = matcher.group(1)  # e.g., OpenSSL/1.0.1e
-                version_number = matcher.group(2)  # e.g., 1.0.1e
+                version_number = matcher.group(1).lower()
+                logger.debug(f"Found OpenSSL version: {version_number}")
 
-                # Check if the version matches any known vulnerable versions
                 if version_number in self.openSSLvulnerableVersions:
+                    logger.debug(f"Version {version_number} is vulnerable")
                     return Alert(
                         risk_category=self.RISK,
                         confidence=self.CONFIDENCE,
@@ -71,15 +62,16 @@ class HeartBleedScanRule(BasePassiveScanRule):
                         msg_ref=self.MSG_REF,
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id(),
-                        evidence=full_version_string
+                        evidence=f"OpenSSL/{version_number}"
                     )
+                else:
+                    logger.debug(f"Version {version_number} is not vulnerable")
             
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
-            # Handle any exceptions that occur during the scan
             logger.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-        
+      
     def __str__(self) -> str:
         """
         Returns a string representation of the HeartBleedScanRule object.
@@ -106,3 +98,4 @@ class HeartBleedScanRule(BasePassiveScanRule):
             int: The WASC ID.
         """
         return 20  # WASC-20: Improper Input Handling
+
