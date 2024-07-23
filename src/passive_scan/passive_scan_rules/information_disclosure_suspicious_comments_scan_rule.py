@@ -51,17 +51,17 @@ class InformationDisclosureSuspiciousCommentsScanRule(BasePassiveScanRule):
             if response_body:
                 alert_map = self.scan_for_suspicious_comments(response_body)
                 if alert_map:
+                    evidence = []
                     for pattern, details in alert_map.items():
                         details = list(set(details))
-                        if len(details) == 1:
-                            description = f"Suspicious comment found: {details[0]}"
-                        else:
-                            description = f"Multiple suspicious comments found: {', '.join(details)}"
+                        evidence.extend(details)
+                    if evidence:
+                        description = f"Suspicious comments found: {', '.join(evidence)}"
                         return Alert(
                             risk_category=self.RISK,
                             confidence=self.CONFIDENCE,
                             msg_ref=self.MSG_REF,
-                            evidence=str(details),
+                            evidence=str(evidence),
                             description=description,
                             cwe_id=self.get_cwe_id(),
                             wasc_id=self.get_wasc_id()
