@@ -66,7 +66,8 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
                         msg_ref=self.MSG_REF,
                         description=f"Sensitive information found in URL parameter: {sensitive_info}",
                         cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
+                        wasc_id=self.get_wasc_id(),
+                        evidence=f"{param}={value}"
                     )
                 # Check if parameter value is a credit card number
                 if self.is_credit_card(value):
@@ -76,7 +77,8 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
                         msg_ref=self.MSG_REF,
                         description="Credit card number found in URL parameter",
                         cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
+                        wasc_id=self.get_wasc_id(),
+                        evidence=f"{param}={value}"
                     )
                 # Check if parameter value is an email address
                 if self.is_email_address(value):
@@ -86,7 +88,8 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
                         msg_ref=self.MSG_REF,
                         description="Email address found in URL parameter",
                         cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
+                        wasc_id=self.get_wasc_id(),
+                        evidence=f"{param}={value}"
                     )
                 # Check if parameter value is a US Social Security Number
                 if self.is_us_ssn(value):
@@ -96,7 +99,8 @@ class InformationDisclosureInUrlScanRule(BasePassiveScanRule):
                         msg_ref=self.MSG_REF,
                         description="US Social Security Number found in URL parameter",
                         cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
+                        wasc_id=self.get_wasc_id(),
+                        evidence=f"{param}={value}"
                     )
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
