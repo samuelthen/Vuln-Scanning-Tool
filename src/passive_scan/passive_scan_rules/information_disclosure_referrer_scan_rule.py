@@ -42,25 +42,6 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
         """
         self.sensitive_words = self.SENSITIVE_WORDS
 
-    # class BinList:
-    #     """
-    #     Mock class for BinList to simulate BIN record lookup.
-    #     """
-    #     BIN_RECORDS = {
-    #         '411111': 'Visa',
-    #         '550000': 'MasterCard',
-    #         '340000': 'American Express',
-    #         '300000': 'Diners Club',
-    #         '601100': 'Discover',
-    #         '201400': 'EnRoute',
-    #         '213100': 'JCB'
-    #     }
-
-    #     @staticmethod
-    #     def get(card_number: str) -> str:
-    #         bin_number = card_number[:6]
-    #         return InformationDisclosureReferrerScanRule.BinList.BIN_RECORDS.get(bin_number, None)
-
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
         Check for sensitive information in HTTP Referrer headers.
@@ -74,6 +55,9 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
         """
         try:
             referrer_headers = request.headers.get('Referer', [])
+            if not isinstance(referrer_headers, list):
+                referrer_headers = [referrer_headers]
+            
             if not referrer_headers:
                 return NoAlert(msg_ref=self.MSG_REF)
             
@@ -89,7 +73,8 @@ class InformationDisclosureReferrerScanRule(BasePassiveScanRule):
                             msg_ref=self.MSG_REF,
                             description=f"Sensitive information found in Referrer header: {sensitive_info}",
                             cwe_id=self.get_cwe_id(),
-                            wasc_id=self.get_wasc_id()
+                            wasc_id=self.get_wasc_id(),
+                            evidence=sensitive_info
                         )
                     # Check for credit card information in the referrer URL
                     if self.is_credit_card(referrer):
