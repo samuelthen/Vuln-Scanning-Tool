@@ -1,5 +1,6 @@
 import logging
 from requests.models import Request, Response
+from bs4 import BeautifulSoup
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
 from .utils.confidence import Confidence
@@ -118,7 +119,7 @@ class MixedContentScanRule(BasePassiveScanRule):
         Returns:
             list: A list of parsed HTML elements.
         """
-        from bs4 import BeautifulSoup
+        
         soup = BeautifulSoup(html_content, 'html.parser')
         return soup.find_all()
 
