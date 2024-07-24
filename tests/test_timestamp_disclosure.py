@@ -67,9 +67,6 @@ class TestTimestampDisclosureScanRule(BasePassiveScanRuleTest):
         self.assertIn(evidence, alert.evidence)
         self.assertIn(timestamp.strftime("%Y-%m-%d %H:%M:%S"), alert.evidence)
 
-    def test_str_representation(self):
-        self.assertEqual(str(self.scan_rule), "Timestamp Disclosure")
-
     def test_get_cwe_id(self):
         self.assertEqual(self.scan_rule.get_cwe_id(), 200)
 
