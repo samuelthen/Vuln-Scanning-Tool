@@ -70,6 +70,7 @@ class ModernAppDetectionScanRule(BasePassiveScanRule):
                     description="Indication of a modern web application",
                     msg_ref=self.MSG_REF,
                     evidence=evidence,
+                    other_info=other_info,
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()
                 )
