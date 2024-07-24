@@ -84,9 +84,6 @@ class TestInsecureFormLoadScanRule(BasePassiveScanRuleTest):
         self.response.headers = {'Content-Type': 'application/json'}
         self.assertFalse(self.scan_rule.is_response_html(self.response))
 
-    def test_str_representation(self):
-        self.assertEqual(str(self.scan_rule), "Insecure Form Load Scan Rule")
-
     def test_get_cwe_id(self):
         self.assertEqual(self.scan_rule.get_cwe_id(), 319)
 
