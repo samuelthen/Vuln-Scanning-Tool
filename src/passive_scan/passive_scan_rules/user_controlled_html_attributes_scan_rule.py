@@ -45,7 +45,7 @@ class UserControlledHTMLAttributesScanRule(BasePassiveScanRule):
                 for element in soup.find_all(True):
                     for attr, value in element.attrs.items():
                         for param in params:
-                            if param in value:
+                            if param.lower() in value:
                                 if self.is_potentially_harmful(value, param):
                                     evidence = f"Element: {element.name}\n" \
                                                f"Attribute: {attr}\n" \
