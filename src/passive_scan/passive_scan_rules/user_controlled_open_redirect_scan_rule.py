@@ -38,15 +38,15 @@ class UserControlledOpenRedirectScanRule(BasePassiveScanRule):
             if response.status_code in [301, 302]:
                 location = response.headers.get('Location')
                 if location:
-                    params = {**request.params, **request.data}
+                    params = {**getattr(request, 'params', {}), **getattr(request, 'data', {})}
                     if self.is_user_controlled_redirect(location, params):
                         return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE,
-                                     description="User-controlled open redirect detected",
-                                     msg_ref=self.MSG_REF,
-                                     evidence=location,
-                                     cwe_id=self.get_cwe_id(),
-                                     wasc_id=self.get_wasc_id())
+                                    confidence=self.CONFIDENCE,
+                                    description="User-controlled open redirect detected",
+                                    msg_ref=self.MSG_REF,
+                                    evidence=location,
+                                    cwe_id=self.get_cwe_id(),
+                                    wasc_id=self.get_wasc_id())
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logging.error(f"Error during scan: {e}")
