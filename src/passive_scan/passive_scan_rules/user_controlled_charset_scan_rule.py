@@ -1,7 +1,9 @@
 import logging
+import re
 from requests.models import Request, Response
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
+from urllib.parse import urlparse, parse_qs
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
 from .utils.confidence import Confidence
@@ -35,7 +37,8 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
             Alert: An Alert object indicating the result of the risk check.
         """
         try:
-            params = request.params
+            params = self.get_url_parameters(request.url)
+            
             if not params:
                 return NoAlert(msg_ref=self.MSG_REF)
 
@@ -50,6 +53,7 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
             if "text/html" in content_type or "application/xhtml+xml" in content_type:
                 if self.check_meta_content_charset(response_body, params):
                     return self.create_alert("META", "Content-Type", response_body)
+                
             elif "application/xml" in content_type:
                 if self.check_xml_encoding_charset(response_body, params):
                     return self.create_alert("XML Declaration", "encoding", response_body)
@@ -58,6 +62,14 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
         except Exception as e:
             logger.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
+
+    def get_url_parameters(self, url):
+        # Parse the URL
+        parsed_url = urlparse(url)
+        # Extract query parameters
+        query_params = parse_qs(parsed_url.query)
+        # Simplify parameters to single values
+        return {k: v[0] for k, v in query_params.items()}
 
     def check_meta_content_charset(self, response_body: str, params: dict) -> bool:
         """
@@ -89,8 +101,13 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
         Returns:
             str: The extracted charset, or None if not found.
         """
-        if 'charset=' in content:
-            return content.split('charset=')[-1].split(';')[0].strip()
+        try:
+            if 'charset=' in content:
+                parts = content.split('charset=')
+                charset = parts[-1].split(';')[0].strip()
+                return charset
+        except Exception as e:
+            logger.error(f"Error extracting charset from content: {e}")
         return None
 
     def check_xml_encoding_charset(self, response_body: str, params: dict) -> bool:
@@ -105,14 +122,16 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
             bool: True if user-controlled encoding is found, False otherwise.
         """
         try:
-            root = ET.fromstring(response_body)
-            encoding = root.get('encoding')
-            if encoding and self.is_user_controlled_charset(encoding, params):
-                return True
-        except ET.ParseError:
-            logger.error("Failed to parse XML response body")
+            # Extract the encoding from the XML declaration using a regular expression
+            match = re.search(r'<\?xml[^>]*encoding=["\']([^"\']+)["\']', response_body)
+            if match:
+                encoding = match.group(1)
+                if encoding and self.is_user_controlled_charset(encoding, params):
+                    return True
+        except Exception as e:
+            logger.error(f"Error during XML encoding check: {e}")
         return False
-
+    
     def is_user_controlled_charset(self, charset: str, params: dict) -> bool:
         """
         Check if the charset is controlled by user input.
@@ -124,8 +143,9 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
         Returns:
             bool: True if the charset is controlled by user input, False otherwise.
         """
+        charset = charset.lower()
         for param in params.values():
-            if charset.lower() == param.lower():
+            if charset == param.lower():
                 return True
         return False
 
@@ -140,9 +160,9 @@ class UserControlledCharsetScanRule(BasePassiveScanRule):
         Returns:
             bool: True if user-controlled charset is found, False otherwise.
         """
-        charset = self.get_charset_from_content(content_type)
-        if charset and self.is_user_controlled_charset(charset, params):
-            return True
+        if 'charset=' in content_type:
+            charset = content_type.split('charset=')[-1].split(';')[0].strip()
+            return self.is_user_controlled_charset(charset, params)
         return False
 
     def create_alert(self, tag: str, attr: str, value: str) -> Alert:
