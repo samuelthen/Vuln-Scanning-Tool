@@ -42,6 +42,7 @@ class UsernameIdorScanRule(BasePassiveScanRule):
         Returns:
             Alert: An Alert object indicating the result of the risk check.
         """
+
         try:
             scan_users = self.get_users()
             if not scan_users:
@@ -51,6 +52,9 @@ class UsernameIdorScanRule(BasePassiveScanRule):
             response_content = str(response.headers) + response.text
             for user in scan_users:
                 username = user
+                if username in response_content:
+                    return self.create_alert(username, username, "Plain text")
+                
                 hashes = self.compute_hashes(username)
                 for hash_type, hash_value in hashes.items():
                     if hash_value in response_content:
