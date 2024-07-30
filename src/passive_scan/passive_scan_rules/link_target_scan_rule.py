@@ -1,4 +1,5 @@
 import logging
+import tldextract
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
@@ -91,11 +92,21 @@ class LinkTargetScanRule(BasePassiveScanRule):
             bool: True if the link is from another domain, False otherwise.
         """
         parsed_link = urlparse(link)
+
         if not parsed_link.netloc:
             return False
 
         link_host = parsed_link.netloc
-        if link_host and link_host != host:
+
+        # Extract the domain and suffix from the host and link
+        host_extract = tldextract.extract(host)
+        link_host_extract = tldextract.extract(link_host)
+
+        host_domain = f"{host_extract.domain}.{host_extract.suffix}"
+        link_domain = f"{link_host_extract.domain}.{link_host_extract.suffix}"
+
+        # Compare the domains instead of the full hostnames
+        if link_domain != host_domain:
             return True
         
         for context in context_list:
@@ -104,22 +115,13 @@ class LinkTargetScanRule(BasePassiveScanRule):
         return True
 
     def check_element(self, link) -> bool:
-        """
-        Check if the link has target="_blank" without rel="noopener".
-
-        Args:
-            link: The link element to check.
-
-        Returns:
-            bool: True if the link meets the conditions, False otherwise.
-        """
         target = link.get(self.TARGET_ATTRIBUTE)
         if target and target.lower() == self.BLANK.lower():
             rel = link.get(self.REL_ATTRIBUTE, "")
             if isinstance(rel, list):
                 rel = ' '.join(rel)  # Convert list to a space-separated string
             rel = rel.lower()
-            if self.OPENER in rel and self.NOOPENER not in rel:
+            if self.NOOPENER not in rel:
                 return True
         return False
 
