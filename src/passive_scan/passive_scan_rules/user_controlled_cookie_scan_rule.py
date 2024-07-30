@@ -1,4 +1,5 @@
 import logging
+import urllib
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
@@ -41,38 +42,32 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
             if not params:
                 return NoAlert(msg_ref=self.MSG_REF)
 
-            for cookie in cookies.split(';'):
-                decoded_cookie = self.decode_cookie(cookie, response.encoding)
-                if not decoded_cookie:
-                    continue
+            for cookie in cookies.split(', '):
+                cookie_parts = cookie.split(';')
+                for part in cookie_parts:
+                    decoded_cookie = self.decode_cookie(part.strip(), response.encoding)
+                    if not decoded_cookie:
+                        continue
 
-                cookie_parts = decoded_cookie.split('=|')
-                for cookie_part in cookie_parts:
-                    alert = self.check_user_controllable_cookie_header_value(request, response, params, cookie_part, decoded_cookie)
-                    if alert:
-                        return alert
+                    name_value = decoded_cookie.split('=', 1)
+                    if len(name_value) == 2:
+                        cookie_name, cookie_value = name_value
+                        alert = self.check_user_controllable_cookie_header_value(request, response, params, cookie_value, decoded_cookie)
+                        if alert:
+                            return alert
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             logging.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def decode_cookie(self, cookie: str, charset: str) -> str:
-        """
-        Decode the cookie using the specified charset or standard charsets.
-
-        Args:
-            cookie (str): The cookie to decode.
-            charset (str): The charset to use for decoding.
-
-        Returns:
-            str: The decoded cookie.
-        """
         try:
-            return cookie.encode().decode(charset or 'utf-8')
+            decoded = urllib.parse.unquote(cookie)
+            return decoded.encode().decode(charset or 'utf-8')
         except (UnicodeDecodeError, TypeError):
             return None
 
-    def check_user_controllable_cookie_header_value(self, request: Request, response: Response, params: dict, cookie_part: str, cookie: str) -> Alert:
+    def check_user_controllable_cookie_header_value(self, request: Request, response: Response, params: dict, cookie_value: str, cookie: str) -> Alert:
         """
         Check if the cookie part matches user-controllable parameter values.
 
@@ -87,7 +82,7 @@ class UserControlledCookieScanRule(BasePassiveScanRule):
             Alert: An Alert object if a match is found, otherwise None.
         """
         for param_name, param_value in params.items():
-            if param_value and len(param_value) > 1 and param_value == cookie_part:
+            if param_value and len(param_value) > 1 and param_value in cookie_value:
                 return Alert(
                     risk_category=self.RISK,
                     confidence=self.CONFIDENCE,
