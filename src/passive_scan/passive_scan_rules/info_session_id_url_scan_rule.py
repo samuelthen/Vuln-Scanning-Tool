@@ -24,11 +24,26 @@ class InfoSessionIdUrlScanRule(BasePassiveScanRule):
         CommonAlertTag.WSTG_V42_SESS_04_SESS_EXPOSED
     ]
 
+    SESSION_IDS = ["asp.net_sessionid",
+                    "aspsessionid",
+                    "siteserver",
+                    "cfid",
+                    "cftoken",
+                    "jsessionid",
+                    "phpsessid",
+                    "sessid",
+                    "sid",
+                    "viewstate",
+                    "zenid"]
+
     SESSION_TOKEN_MIN_LENGTH = 8
-    PATHSESSIONIDPATTERN = re.compile(
-        r"jsessionid=[\dA-Z]{" + str(SESSION_TOKEN_MIN_LENGTH) + ",}",
-        re.IGNORECASE
-    )
+
+    @classmethod
+    def get_path_session_id_pattern(cls):
+        return re.compile(
+            r"|".join([f"{keyword}=[\\dA-Z]{{{cls.SESSION_TOKEN_MIN_LENGTH},}}" for keyword in cls.SESSION_IDS]),
+            re.IGNORECASE
+        )
 
     def check_risk(self, request: Request, response: Response) -> Alert:
         """
@@ -43,7 +58,6 @@ class InfoSessionIdUrlScanRule(BasePassiveScanRule):
         """
         try:
             url_params = self.get_url_params(request)
-            found = False
 
             session_ids = self.get_session_ids()
 
@@ -58,24 +72,22 @@ class InfoSessionIdUrlScanRule(BasePassiveScanRule):
                         cwe_id=self.get_cwe_id(),
                         wasc_id=self.get_wasc_id()
                     )
-                    found = True
 
-            if not found:
-                path = urlparse(request.url).path
-                if self.PATHSESSIONIDPATTERN.search(path):
-                    return Alert(
-                        risk_category=self.RISK,
-                        confidence=self.CONFIDENCE,
-                        description="Session ID found in URL path",
-                        msg_ref=self.MSG_REF,
-                        evidence=path,
-                        cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
-                    )
-                    found = True
+            match = self.get_path_session_id_pattern().search(request.url)
 
-            if found:
-                return self.check_session_id_exposure_to_3rd_party(response)
+            if match:
+                return Alert(
+                    risk_category=self.RISK,
+                    confidence=self.CONFIDENCE,
+                    description="Session ID found in URL path",
+                    msg_ref=self.MSG_REF,
+                    evidence=match.group(0),
+                    cwe_id=self.get_cwe_id(),
+                    wasc_id=self.get_wasc_id()
+                )
+            
+            # Implement when return a list of alert
+            # self.check_session_id_exposure_to_3rd_party(response) 
 
             return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
@@ -90,43 +102,7 @@ class InfoSessionIdUrlScanRule(BasePassiveScanRule):
             list: A list of session ID names.
         """
         # Implement a method to retrieve the list of session IDs from configuration or constants
-        return ["jsessionid", "phpsessid", "cfid", "cftoken"]
-
-    def check_session_id_exposure_to_3rd_party(self, response: Response) -> Alert:
-        """
-        Check if the session ID might be exposed to 3rd-parties via external links in the response.
-
-        Args:
-            response (Response): The HTTP response object.
-
-        Returns:
-            Alert: An Alert object indicating the result of the exposure check.
-        """
-        body = response.text
-        host = urlparse(response.url).hostname
-
-        ext_link_patterns = [
-            re.compile(r'src\s*=\s*[\'"]?(https?://[\w\.\-_]+)', re.IGNORECASE),
-            re.compile(r'href\s*=\s*[\'"]?(https?://[\w\.\-_]+)', re.IGNORECASE),
-            re.compile(r'[=\(]\s*[\'"](https?://[\w\.\-_]+)', re.IGNORECASE)
-        ]
-
-        for pattern in ext_link_patterns:
-            match = pattern.search(body)
-            if match:
-                link_hostname = urlparse(match.group(1)).hostname
-                if link_hostname and host != link_hostname:
-                    return Alert(
-                        risk_category=self.RISK,
-                        confidence=Confidence.CONFIDENCE_MEDIUM,
-                        description="Session ID might be exposed to 3rd-party",
-                        msg_ref=self.MSG_REF,
-                        evidence=match.group(1),
-                        cwe_id=self.get_cwe_id(),
-                        wasc_id=self.get_wasc_id()
-                    )
-
-        return NoAlert(msg_ref=self.MSG_REF)
+        return self.SESSION_IDS
 
     def get_url_params(self, request: Request) -> dict:
         """
@@ -167,3 +143,39 @@ class InfoSessionIdUrlScanRule(BasePassiveScanRule):
             int: The WASC ID.
         """
         return 13  # WASC-13: Info leakage
+
+    # def check_session_id_exposure_to_3rd_party(self, response: Response) -> Alert:
+    #     """
+    #     Check if the session ID might be exposed to 3rd-parties via external links in the response.
+
+    #     Args:
+    #         response (Response): The HTTP response object.
+
+    #     Returns:
+    #         Alert: An Alert object indicating the result of the exposure check.
+    #     """
+    #     body = response.text
+    #     host = urlparse(response.url).hostname
+
+    #     ext_link_patterns = [
+    #         re.compile(r'src\s*=\s*[\'"]?(https?://[\w\.\-_]+)', re.IGNORECASE),
+    #         re.compile(r'href\s*=\s*[\'"]?(https?://[\w\.\-_]+)', re.IGNORECASE),
+    #         re.compile(r'[=\(]\s*[\'"](https?://[\w\.\-_]+)', re.IGNORECASE)
+    #     ]
+
+    #     for pattern in ext_link_patterns:
+    #         match = pattern.search(body)
+    #         if match:
+    #             link_hostname = urlparse(match.group(1)).hostname
+    #             if link_hostname and host != link_hostname:
+    #                 return Alert(
+    #                     risk_category=self.RISK,
+    #                     confidence=Confidence.CONFIDENCE_MEDIUM,
+    #                     description="Session ID might be exposed to 3rd-party",
+    #                     msg_ref=self.MSG_REF,
+    #                     evidence=match.group(1),
+    #                     cwe_id=self.get_cwe_id(),
+    #                     wasc_id=self.get_wasc_id()
+    #                 )
+
+    #     return NoAlert(msg_ref=self.MSG_REF)
