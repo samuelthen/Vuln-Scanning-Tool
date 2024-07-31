@@ -48,7 +48,6 @@ class TestInfoPrivateAddressDisclosureScanRule(BasePassiveScanRuleTest):
         self.assert_no_alert(result)
 
     def test_check_risk_exception(self):
-        self.response.text = 'Sample response text'
         self.response.text = Mock(side_effect=Exception("Test exception"))
 
         result = self.scan_rule.check_risk(self.request, self.response)
