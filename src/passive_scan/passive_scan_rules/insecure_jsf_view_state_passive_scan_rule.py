@@ -38,9 +38,10 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
         try:
             if response.content and response.headers.get("Content-Type", "").startswith("text/html"):
                 source_elements = self.extract_input_elements(response.text)
+
                 for element in source_elements:
                     element_id = element.get("id", "")
-                    if element_id and "javax.faces.ViewState" in element_id.lower():
+                    if element_id and "javax.faces.ViewState".lower() in element_id.lower():
                         view_state = element.get("value")
                         if view_state and not view_state.startswith("_") and not self.is_view_state_stored_on_server(view_state):
                             if not self.is_view_state_secure(view_state):
@@ -48,6 +49,7 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
                                              confidence=Confidence.CONFIDENCE_LOW, 
                                              description="Insecure JSF ViewState detected",
                                              msg_ref=self.MSG_REF,
+                                             evidence=view_state,
                                              cwe_id=self.get_cwe_id(), 
                                              wasc_id=self.get_wasc_id())
             return NoAlert(msg_ref=self.MSG_REF)
@@ -81,11 +83,12 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
         """
         if not view_state:
             return True
-
+        
         try:
             decoded_bytes = base64.b64decode(view_state)
             decompressed_bytes = self.decompress(decoded_bytes)
             decoded_view_state = decompressed_bytes.decode('utf-8')
+            
             return self.is_raw_view_state_secure(decoded_view_state)
         except (base64.binascii.Error, zlib.error, UnicodeDecodeError):
             return self.is_raw_view_state_secure(view_state)
@@ -116,7 +119,7 @@ class InsecureJsfViewStatePassiveScanRule(BasePassiveScanRule):
         Returns:
             bool: True if secure, False otherwise.
         """
-        return "java" not in view_state
+        return "java" not in view_state.lower()
 
     def is_view_state_stored_on_server(self, val: str) -> bool:
         """
