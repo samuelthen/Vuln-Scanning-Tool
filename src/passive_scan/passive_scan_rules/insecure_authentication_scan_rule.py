@@ -56,20 +56,26 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
         except Exception as e:
             logging.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-
+        
     def handle_basic_auth(self, auth_header_value):
         try:
             auth_values = auth_header_value.split()
             if len(auth_values) == 2:
                 encoded_credentials = auth_values[1]
-                decoded = base64.b64decode(encoded_credentials).decode('utf-8')
+                try:
+                    decoded = base64.b64decode(encoded_credentials).decode('utf-8')
+                except Exception as decode_error:
+                    logger.error(f"Base64 decoding failed: {encoded_credentials}. Error: {decode_error}")
+                    return ScanError(description=f"Invalid Base64 value: {encoded_credentials}", msg_ref=self.MSG_REF)
+                
                 username, password = decoded.split(":", 1) if ":" in decoded else (decoded, None)
+                
                 return Alert(
                     risk_category=Risk.RISK_HIGH if password else self.RISK,
                     confidence=Confidence.CONFIDENCE_MEDIUM,
                     description="Insecure Basic Authentication detected",
                     msg_ref=self.MSG_REF,
-                    extra_info=f"Username: {username}, Password: {password}",
+                    evidence=f"Username: {username}, Password: {'*' * len(password) if password else 'Not provided'}",
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()
                 )
@@ -77,12 +83,12 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
                 logger.debug(f"Malformed Basic Authentication Header: {auth_header_value}")
                 return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
-            logger.error(f"Invalid Base64 value for Basic Authentication: {auth_header_value}")
+            logger.error(f"Error processing Basic Authentication: {auth_header_value}. Error: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-
+    
     def handle_digest_auth(self, auth_header_value):
         try:
-            username_match = re.search(r'username="([^"]+)"', auth_header_value, re.IGNORECASE)
+            username_match = re.search(r'username="?([^",]+)"?', auth_header_value, re.IGNORECASE)
             if username_match:
                 username = username_match.group(1)
                 return Alert(
@@ -90,17 +96,17 @@ class InsecureAuthenticationScanRule(BasePassiveScanRule):
                     confidence=Confidence.CONFIDENCE_MEDIUM,
                     description="Insecure Digest Authentication detected",
                     msg_ref=self.MSG_REF,
-                    extra_info=f"Username: {username}, Auth Header: {auth_header_value}",
+                    evidence=f"Username: {username}",
                     cwe_id=self.get_cwe_id(),
                     wasc_id=self.get_wasc_id()
                 )
             else:
-                logger.debug(f"Malformed Digest Authentication Header: {auth_header_value}")
+                logger.debug(f"Username not found in Digest Authentication Header: {auth_header_value}")
                 return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
-            logger.error(f"Error processing Digest Authentication: {auth_header_value}")
+            logger.error(f"Error processing Digest Authentication: {auth_header_value}. Error: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
-
+    
     def __str__(self) -> str:
         """
         Returns a string representation of the InsecureAuthenticationScanRule object.
