@@ -1,11 +1,16 @@
 import re
+import logging
 from requests.models import Request, Response
+from bs4 import BeautifulSoup
+import tldextract
 from urllib.parse import urlparse
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
 from .utils.confidence import Confidence
 from .utils.risk import Risk
 from .utils.common_alert_tag import CommonAlertTag
+
+logger = logging.getLogger(__name__)
 
 class StrictTransportSecurityScanRule(BasePassiveScanRule):
     """
@@ -39,88 +44,93 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
         """
         try:
             # Only check secure (HTTPS) responses
+            alert = []
             if request.url.startswith("https://"):
-                sts_headers = response.headers.get(self.STS_HEADER, None)
-                meta_hsts = self.get_meta_hsts_evidence(response)
+                # Check for META tag HSTS first
+                
 
+                # Check for STS header
+                sts_headers = response.headers.get(self.STS_HEADER)
+
+                meta_hsts = self.get_meta_hsts_evidence(response)
+                if meta_hsts:
+                    alert.append(Alert(risk_category=self.RISK,
+                                confidence=self.CONFIDENCE, 
+                                description="Strict-Transport-Security set via META tag",
+                                msg_ref="pscanrules.stricttransportsecurity.compliance.meta",
+                                cwe_id=self.get_cwe_id(), 
+                                wasc_id=self.get_wasc_id()))
+                
                 if not sts_headers:
-                    report = True
                     if self.is_redirect(response):
                         location_header = response.headers.get('Location')
                         if location_header:
                             try:
-                                src_uri = urlparse(request.url)
                                 redir_uri = urlparse(location_header)
-                                if redir_uri.hostname == src_uri.hostname and redir_uri.scheme == 'https':
-                                    report = False
+                                if self.is_link_from_other_domain(request.url, location_header) and redir_uri.scheme == 'https':
+                                    return NoAlert(msg_ref=self.MSG_REF)
                             except Exception as e:
-                                # Ignore, so report the missing header
                                 print(f"Error parsing URLs: {e}")
-                    if report:
-                        return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Strict-Transport-Security header missing",
-                                     msg_ref="pscanrules.stricttransportsecurity",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())
-                
-                elif len(response.headers.get(self.STS_HEADER, '').split(',')) > 1:
-                    return Alert(risk_category=self.RISK,
-                                 confidence=self.RISK, 
-                                 description="Multiple Strict-Transport-Security headers found",
-                                 msg_ref="pscanrules.stricttransportsecurity.compliance.multiple.header",
-                                 cwe_id=self.get_cwe_id(), 
-                                 wasc_id=self.get_wasc_id())
+                    alert.append(Alert(risk_category=self.RISK,
+                                confidence=self.CONFIDENCE, 
+                                description="Strict-Transport-Security header missing",
+                                msg_ref="pscanrules.stricttransportsecurity",
+                                cwe_id=self.get_cwe_id(), 
+                                wasc_id=self.get_wasc_id()))
                 else:
+                    if isinstance(sts_headers, list):
+                        if len(sts_headers) > 1:
+                            alert.append(Alert(risk_category=self.RISK,
+                                        confidence=self.CONFIDENCE, 
+                                        description="Multiple Strict-Transport-Security headers found",
+                                        msg_ref="pscanrules.stricttransportsecurity.compliance.multiple.header",
+                                        cwe_id=self.get_cwe_id(), 
+                                        wasc_id=self.get_wasc_id()))
+                        sts_headers = sts_headers[0]  # Use the first header if there's only one
+
                     sts_option_string = sts_headers.lower()
                     if not self.WELL_FORMED_PATT.match(sts_option_string):
-                        return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Malformed Strict-Transport-Security header content",
-                                     msg_ref="pscanrules.stricttransportsecurity.compliance.malformed.content",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())
+                        alert.append(Alert(risk_category=self.RISK,
+                                    confidence=self.CONFIDENCE, 
+                                    description="Malformed Strict-Transport-Security header content",
+                                    msg_ref="pscanrules.stricttransportsecurity.compliance.malformed.content",
+                                    cwe_id=self.get_cwe_id(), 
+                                    wasc_id=self.get_wasc_id()))
                     if self.BAD_MAX_AGE_PATT.search(sts_option_string):
-                        return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Strict-Transport-Security header with max-age=0",
-                                     msg_ref="pscanrules.stricttransportsecurity.max.age",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())
+                        alert.append(Alert(risk_category=self.RISK,
+                                    confidence=self.CONFIDENCE, 
+                                    description="Strict-Transport-Security header with max-age=0",
+                                    msg_ref="pscanrules.stricttransportsecurity.max.age",
+                                    cwe_id=self.get_cwe_id(), 
+                                    wasc_id=self.get_wasc_id()))
                     if not self.MAX_AGE_PATT.search(sts_option_string):
-                        return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Strict-Transport-Security header missing max-age",
-                                     msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.missing",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())                    
+                        alert.append(Alert(risk_category=self.RISK,
+                                    confidence=self.CONFIDENCE, 
+                                    description="Strict-Transport-Security header missing max-age",
+                                    msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.missing",
+                                    cwe_id=self.get_cwe_id(), 
+                                    wasc_id=self.get_wasc_id()))                    
                     if self.MALFORMED_MAX_AGE.search(sts_option_string):
-                        return Alert(risk_category=self.RISK,
-                                     confidence=self.CONFIDENCE, 
-                                     description="Malformed max-age in Strict-Transport-Security header",
-                                     msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.malformed",
-                                     cwe_id=self.get_cwe_id(), 
-                                     wasc_id=self.get_wasc_id())   
-
-                if meta_hsts:
-                    return Alert(risk_category=self.RISK,
-                                 confidence=self.CONFIDENCE, 
-                                 description="Strict-Transport-Security set via META tag",
-                                 msg_ref="pscanrules.stricttransportsecurity.compliance.meta",
-                                 cwe_id=self.get_cwe_id(), 
-                                 wasc_id=self.get_wasc_id())   
-
+                        alert.append(Alert(risk_category=self.RISK,
+                                    confidence=self.CONFIDENCE, 
+                                    description="Malformed max-age in Strict-Transport-Security header",
+                                    msg_ref="pscanrules.stricttransportsecurity.compliance.max.age.malformed",
+                                    cwe_id=self.get_cwe_id(), 
+                                    wasc_id=self.get_wasc_id()))
             else:
                 # Check for STS headers in non-HTTPS responses at low threshold
-                if response.headers.get(self.STS_HEADER, None):
-                    return Alert(risk_category=Risk.RISK_INFO,
-                                 confidence=self.CONFIDENCE, 
-                                 description="Strict-Transport-Security header present on non-HTTPS response",
-                                 msg_ref="pscanrules.stricttransportsecurity.plain.resp",
-                                 cwe_id=self.get_cwe_id(), 
-                                 wasc_id=self.get_wasc_id())   
+                if response.headers.get(self.STS_HEADER):
+                    alert.append(Alert(risk_category=Risk.RISK_INFO,
+                                confidence=self.CONFIDENCE, 
+                                description="Strict-Transport-Security header present on non-HTTPS response",
+                                msg_ref="pscanrules.stricttransportsecurity.plain.resp",
+                                cwe_id=self.get_cwe_id(), 
+                                wasc_id=self.get_wasc_id()))
 
-            return NoAlert(msg_ref=self.MSG_REF)
+            if alert:
+                return alert[0]
+            else:
+                return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
             print(f"Error during scan: {e}")
@@ -136,8 +146,8 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
         Returns:
             str: The META tag content if found, otherwise None.
         """
+
         if "text/html" in response.headers.get("Content-Type", ""):
-            from bs4 import BeautifulSoup
             soup = BeautifulSoup(response.text, 'html.parser')
             meta_tags = soup.find_all('meta', attrs={'http-equiv': self.STS_HEADER})
             if meta_tags:
@@ -155,6 +165,38 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
             bool: True if the response is a redirect, otherwise False.
         """
         return response.status_code in range(300, 400) and 'Location' in response.headers
+
+    def is_link_from_other_domain(self, host: str, link: str) -> bool:
+        """
+        Check if the link is from another domain.
+
+        Args:
+            host (str): The host of the original request.
+            link (str): The link to check.
+            context_list (list): The context list for the original URL.
+
+        Returns:
+            bool: True if the link is from another domain, False otherwise.
+        """
+        parsed_link = urlparse(link)
+
+        if not parsed_link.netloc:
+            return False
+
+        link_host = parsed_link.netloc
+
+        # Extract the domain and suffix from the host and link
+        host_extract = tldextract.extract(host)
+        link_host_extract = tldextract.extract(link_host)
+
+        host_domain = f"{host_extract.domain}.{host_extract.suffix}"
+        link_domain = f"{link_host_extract.domain}.{link_host_extract.suffix}"
+
+        # Compare the domains instead of the full hostnames
+        if link_domain != host_domain:
+            return True
+
+        return True
 
     def __str__(self) -> str:
         """
