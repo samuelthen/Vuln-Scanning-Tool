@@ -17,10 +17,10 @@ class EnhancedWebSpider:
     A web crawler (spider) that navigates through web pages starting from a base URL and extracts links and data.
     """
     
-    def __init__(self, base_url, login_url=None, login_payload=None, max_pages=10, delay=1, retries=3,
-                 output_file="crawled_data.json", respect_robots_txt=False, max_depth=0, max_threads=5,
+    def __init__(self, base_url, login_url=None, login_payload=None, max_pages=60, delay=1, retries=3,
+                 output_file="crawled_data.json", respect_robots_txt=False, max_depth=3, max_threads=5,
                  max_duration=0, max_children=0, max_parse_size=0, domains_in_scope=None,
-                 query_param_handling=2, send_referer=False, accept_cookies=True, process_forms=True,
+                 query_param_handling=2, send_referer=False, accept_cookies=True, process_forms=False,
                  post_forms=False, parse_html_comments=False, 
                  parse_sitemap_xml=False, parse_svn_metadata=False, parse_git_metadata=False,
                  parse_ds_store_files=False, handle_odata_params=False, irrelevant_params=None):
@@ -237,7 +237,7 @@ class EnhancedWebSpider:
                 params.pop(param)
         return f"{url.split('?')[0]}?" + '&'.join(f"{key}={value[0]}" for key, value in params.items())
 
-    def fetch_page(self, url):
+    def fetch_page(self, url, method):
         """
         Fetches the content of the given URL.
         """
@@ -245,14 +245,14 @@ class EnhancedWebSpider:
         for attempt in range(self.retries):
             try:
                 # Create the request
-                req = Request('GET', url, headers=headers)
+                req = Request(method, url, headers=headers)
                 
                 # Send the request
                 response = self.session.send(req.prepare()) if self.session else requests.Session().send(req.prepare())
                 response.raise_for_status()
                 
                 # Store the request and response in the mapping
-                self.url_request_response_map[url] = (req, response)
+                self.url_request_response_map[f"{method} {url}"] = (req, response)
                 
                 return response.text, response.content
             except requests.RequestException as e:
@@ -308,8 +308,10 @@ class EnhancedWebSpider:
             return []
 
         logger.info(f"Crawling: {normalized_url}")
-        page_text, page_content = self.fetch_page(normalized_url)
-        if not page_text:
+        page_text, page_content = self.fetch_page(normalized_url, "GET")
+        page_text_post, page_content_post = self.fetch_page(normalized_url, "POST")
+        
+        if not page_text and not page_text_post:
             return []
 
         if self.max_parse_size > 0 and len(page_content) > self.max_parse_size:
@@ -317,10 +319,17 @@ class EnhancedWebSpider:
             return []
 
         self.visited_urls.add(normalized_url)
-        links = self.extract_links(page_text, normalized_url)
+        links = set()
+        
+        if page_text:
+            links.update(self.extract_links(page_text, normalized_url))
 
+        if page_text_post:
+            links.update(self.extract_links(page_text_post, normalized_url))    
+        
         new_urls = []
         for link in links:
+
             if self.should_visit(link):
                 new_urls.append((link, depth + 1))
             elif not self.is_domain_in_scope(link):
