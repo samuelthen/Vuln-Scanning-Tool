@@ -1,6 +1,8 @@
 import logging
 import re
 import base64
+from enum import Enum
+from typing import List
 from requests.models import Request, Response
 from .utils.base_passive_scan_rule import BasePassiveScanRule
 from .utils.alert import Alert, NoAlert, ScanError
@@ -15,7 +17,6 @@ class ViewstateScanRule(BasePassiveScanRule):
     Passive scan rule to check for ViewState issues in HTTP responses.
     """
     MSG_REF = "pscanrules.viewstate"
-    PLUGIN_ID = 10032
     RISK = Risk.RISK_MEDIUM
     CONFIDENCE = Confidence.CONFIDENCE_MEDIUM
 
@@ -40,20 +41,22 @@ class ViewstateScanRule(BasePassiveScanRule):
         try:
             source = response.text  # Assuming response text contains the HTML source
             hidden_fields = self.get_hidden_fields(source)
+
             if not hidden_fields:
                 return NoAlert(msg_ref=self.MSG_REF)
 
             v = self.extract_viewstate(hidden_fields)
-            if not v.is_valid:
+            
+            if not v.check_validity():
                 return NoAlert(msg_ref=self.MSG_REF)
 
             if not v.has_mac_test1() or not v.has_mac_test2():
                 if not v.has_mac_test1() and not v.has_mac_test2():
                     return self.alert_no_mac_for_sure()
-                elif self.get_alert_threshold() == 'LOW':
+                else:
                     return self.alert_no_mac_unsure()
 
-            if not v.is_latest_aspnet_version:
+            if not v.is_latest_asp_net_version:
                 return self.alert_old_asp_version()
 
             list_of_matches = ViewstateAnalyzer.get_search_results(v, self)
@@ -163,53 +166,83 @@ class ViewstateScanRule(BasePassiveScanRule):
         """
         return "Viewstate Scan Rule"
 
+class ViewstateVersion(Enum):
+    UNKNOWN = 0
+    ASPNET1 = 1
+    ASPNET2 = 2
+
+    def is_latest(self):
+        return self == ViewstateVersion.ASPNET2
+
 class Viewstate:
     def __init__(self, value, was_split=False):
-        self.is_split = was_split
         self.base64_value = value
-        self.decoded_value = self.base64_decode(value)
-        self.is_valid = self.decoded_value is not None
-        self.set_version()
+        self.is_valid = True
+        self.is_split = was_split
+        self.decoded_value = self.base64_decode(self.base64_value)
+        self.version = self.set_version()
+        self.is_latest_asp_net_version = self.version == ViewstateVersion.ASPNET2
 
-    @property
-    def is_valid(self):
-        return self.is_valid and self.version != "UNKNOWN"
+    def check_validity(self):
+        return self.is_valid and (self.get_version() != ViewstateVersion.UNKNOWN)
 
-    @property
-    def is_split(self):
+    def check_split(self):
         return self.is_split
 
     def has_mac_test1(self):
         l = len(self.decoded_value)
-        last_chars = self.decoded_value[l-22:l-20]
-        return last_chars == "dd" if self.version == "ASPNET2" else last_chars == ">>"
+        # Ensure the indices are correct for extracting the bytes before the MAC
+        last_chars_before_mac = self.decoded_value[l - 22 : l - 20]
+
+        if self.version == ViewstateVersion.ASPNET2:
+            return last_chars_before_mac == b'\xdd\xdd'  # Use bytes comparison for ASP.NET 2.0
+
+        if self.version == ViewstateVersion.ASPNET1:
+            return last_chars_before_mac == b'\x3e\x3e'  # '>>' as bytes for ASP.NET 1.0
+
+        return False  # Return False if the version is unknown
+
 
     def has_mac_test2(self):
         l = len(self.decoded_value)
-        last_chars = self.decoded_value[l-2:]
-        return last_chars != "dd" if self.version == "ASPNET2" else last_chars != ">>"
+        last_chars_before_mac = self.decoded_value[-2:]
 
-    @property
-    def is_latest_aspnet_version(self):
-        return self.version == "ASPNET2"
+        if self.version == ViewstateVersion.ASPNET2:
+            return last_chars_before_mac != b"dd"
+
+        if self.version == ViewstateVersion.ASPNET1:
+            return last_chars_before_mac != b">>"
+
+        return True
+
+    def get_decoded_value(self):
+        return self.decoded_value
+
+    def get_version(self):
+        return self.version
 
     def set_version(self):
         if self.base64_value.startswith("/w"):
-            self.version = "ASPNET2"
-        elif self.base64_value.startswith("dD"):
-            self.version = "ASPNET1"
-        else:
-            self.version = "UNKNOWN"
+            return ViewstateVersion.ASPNET2
+
+        if self.base64_value.startswith("dD"):
+            return ViewstateVersion.ASPNET1
+        
+        return ViewstateVersion.UNKNOWN
 
     def base64_decode(self, value):
         try:
-            return base64.b64decode(value).decode('utf-8')
-        except Exception:
-            try:
-                return base64.b64decode(value[:-1]).decode('utf-8')
-            except Exception:
-                return None
+            # Add padding if necessary
+            missing_padding = len(value) % 4
+            if missing_padding:
+                value += '=' * (4 - missing_padding)
+            return base64.b64decode(value)
+        except Exception as e:
+            self.is_valid = False
+            logger.error(f"Invalid base64: {str(e)}")
+            return b""
 
+            
 class ViewstateAnalyzer:
     @staticmethod
     def get_search_results(v, s):
