@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 from requests.models import Request, Response
-from .test_utils.base_passive_scan_rule_test import BasePassiveScanRuleTest
+from tests.test_utils.base_passive_scan_rule_test import BasePassiveScanRuleTest
 from src.passive_scan.passive_scan_rules.utils.alert import Alert, NoAlert, ScanError
 from src.passive_scan.passive_scan_rules.utils.confidence import Confidence
 from src.passive_scan.passive_scan_rules.utils.risk import Risk

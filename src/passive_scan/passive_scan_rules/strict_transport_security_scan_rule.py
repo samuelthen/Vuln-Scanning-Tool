@@ -70,7 +70,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                                 if self.is_link_from_other_domain(request.url, location_header) and redir_uri.scheme == 'https':
                                     return NoAlert(msg_ref=self.MSG_REF)
                             except Exception as e:
-                                print(f"Error parsing URLs: {e}")
+                                logger.error(f"Error parsing URLs: {e}")
                     alert.append(Alert(risk_category=self.RISK,
                                 confidence=self.CONFIDENCE, 
                                 description="Strict-Transport-Security header missing",
@@ -133,7 +133,7 @@ class StrictTransportSecurityScanRule(BasePassiveScanRule):
                 return NoAlert(msg_ref=self.MSG_REF)
         except Exception as e:
             # Handle any exceptions that occur during the scan
-            print(f"Error during scan: {e}")
+            logger.error(f"Error during scan: {e}")
             return ScanError(description=str(e), msg_ref=self.MSG_REF)
 
     def get_meta_hsts_evidence(self, response: Response) -> str:

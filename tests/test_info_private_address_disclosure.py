@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 from requests.models import Request, Response
-from .test_utils.base_passive_scan_rule_test import BasePassiveScanRuleTest
+from tests.test_utils.base_passive_scan_rule_test import BasePassiveScanRuleTest
 from src.passive_scan.passive_scan_rules.info_private_address_disclosure_scan_rule import InfoPrivateAddressDisclosureScanRule
 from src.passive_scan.passive_scan_rules.utils.alert import Alert, NoAlert, ScanError
 from src.passive_scan.passive_scan_rules.utils.confidence import Confidence

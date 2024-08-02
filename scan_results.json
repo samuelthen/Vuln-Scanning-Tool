@@ -1,0 +1,220 @@
+{
+  "urls": {
+    "in_scope_urls": [
+      "https://testportal.helium.sh/css/style.css",
+      "https://testportal.helium.sh/",
+      "https://testportal.helium.sh/admin/",
+      "https://testportal.helium.sh/mod.php",
+      "https://testportal.helium.sh/images/logo.png",
+      "https://testportal.helium.sh/images/adspace.gif",
+      "https://testportal.helium.sh/images/ad.jpg",
+      "https://testportal.helium.sh/js/jquery.js"
+    ],
+    "out_scope_urls": [
+      "http://studio7designs.com/contact-quote/"
+    ]
+  },
+  "passive_vulnerabilities": {
+    "informational": {
+      "Information Disclosure - Suspicious Comments": [
+        "https://testportal.helium.sh/",
+        "https://testportal.helium.sh/admin/",
+        "https://testportal.helium.sh/images/logo.png",
+        "https://testportal.helium.sh/images/adspace.gif",
+        "https://testportal.helium.sh/js/jquery.js"
+      ],
+      "Charset Mismatch": [
+        "https://testportal.helium.sh/"
+      ],
+      "Re-examine Cache-control Directives": [
+        "https://testportal.helium.sh/mod.php"
+      ]
+    },
+    "low": {
+      "X-Content-Type-Options Header Missing": {
+        "https://testportal.helium.sh/css/style.css": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/admin/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/images/logo.png": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/images/adspace.gif": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/images/ad.jpg": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/js/jquery.js": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        }
+      },
+      "Server Leaks Version Information via \"Server\" HTTP Response Header Field": {
+        "https://testportal.helium.sh/css/style.css": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/mod.php": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/images/logo.png": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/images/adspace.gif": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/images/ad.jpg": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/js/jquery.js": {
+          "evidence": "nginx/1.18.0 (Ubuntu)",
+          "cwe_id": 200,
+          "wasc_id": 13
+        }
+      },
+      "Cookie Without Secure Flag": {
+        "https://testportal.helium.sh/": {
+          "evidence": "PHPSESSID=9bc7c93d9a0f44d5c8c04a7b7f106714; path=/",
+          "cwe_id": 614,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "PHPSESSID=b2cc8020640bac0d82f675a1aec86a1f; path=/",
+          "cwe_id": 614,
+          "wasc_id": 13
+        }
+      },
+      "Cookie No HttpOnly Flag": {
+        "https://testportal.helium.sh/": {
+          "evidence": "PHPSESSID=9bc7c93d9a0f44d5c8c04a7b7f106714; path=/",
+          "cwe_id": 1004,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "PHPSESSID=b2cc8020640bac0d82f675a1aec86a1f; path=/",
+          "cwe_id": 1004,
+          "wasc_id": 13
+        }
+      },
+      "Cookie without SameSite Attribute": {
+        "https://testportal.helium.sh/": {
+          "evidence": "PHPSESSID=9bc7c93d9a0f44d5c8c04a7b7f106714; path=/",
+          "cwe_id": 1275,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "PHPSESSID=b2cc8020640bac0d82f675a1aec86a1f; path=/",
+          "cwe_id": 1275,
+          "wasc_id": 13
+        }
+      },
+      "Hash Disclosure": {
+        "https://testportal.helium.sh/": {
+          "evidence": "MD4 / MD5 found: 9bc7c93d9a0f44d5c8c04a7b7f106714",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "MD4 / MD5 found: b2cc8020640bac0d82f675a1aec86a1f",
+          "cwe_id": 200,
+          "wasc_id": 13
+        }
+      },
+      "Server Leaks Information via \"X-Powered-By\" HTTP Response Header Field(s)": {
+        "https://testportal.helium.sh/": {
+          "evidence": "X-Powered-By: PHP/7.2.34",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "X-Powered-By: PHP/7.2.34",
+          "cwe_id": 200,
+          "wasc_id": 13
+        },
+        "https://testportal.helium.sh/mod.php": {
+          "evidence": "X-Powered-By: PHP/7.2.34",
+          "cwe_id": 200,
+          "wasc_id": 13
+        }
+      }
+    },
+    "medium": {
+      "Missing Anti-clickjacking Header": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/admin/": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php": {
+          "cwe_id": 1021,
+          "wasc_id": 15
+        }
+      },
+      "Content Security Policy (CSP) Header Not Set": {
+        "https://testportal.helium.sh/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/admin/": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        },
+        "https://testportal.helium.sh/mod.php": {
+          "cwe_id": 693,
+          "wasc_id": 15
+        }
+      },
+      "Absence of Anti-CSRF Tokens": {
+        "https://testportal.helium.sh/": {
+          "evidence": "<form action=\"cari.php\" method=\"GET\">\n<ul>\n<li><input class=\"search-field\" name=\"search\" type=\"text\" value=\"\"/></li>\n<li><input class=\"search-submit\" name=\"submit\" type=\"submit\" value=\"Cari\"/></li>\n</ul>\n</form>",
+          "cwe_id": 352,
+          "wasc_id": 9
+        },
+        "https://testportal.helium.sh/admin/": {
+          "evidence": "<form action=\"login.php\" method=\"post\">\n<form action=\"login.php\" method=\"post\">\n<p>use credential below<br/>username: test<br/>password: 123456</p>\n<table>\n<tr>\n<td></td>Username<td></td>:<td></td><input name=\"username\" type=\"text\"/>\n</tr>\n<tr>\n<td></td>Password<td></td>:<td></td><input name=\"paswd\" type=\"password\"/>\n</tr>\n<tr>\n<td align=\"right\" colspan=\"3\"></td>\n<input type=\"submit\" value=\"Login\"/>\n</tr>\n</table>\n</form>\n</form>",
+          "cwe_id": 352,
+          "wasc_id": 9
+        }
+      }
+    },
+    "high": {}
+  }
+}
